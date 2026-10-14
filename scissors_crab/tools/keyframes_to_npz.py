@@ -14,8 +14,12 @@ keyframes, by reusing that tool's functions:
 - the base pose solved from the joints: the floor is the plane the robot rests on
   through three of its six feet, and planted feet are held from row to row.
 
-The base pose is quasi-static by construction: the robot always rests on the floor,
-so a keyframed hop is not representable here; a hop needs its own reward-based task.
+The base pose is quasi-static by construction: the robot rests on the floor. A jump is
+the one exception, and it is keyframed rather than solved: the table's optional `lift`
+(metres, how far `jumper_root` was raised in Blender) is added to the solved height,
+so through a hop the feet leave the floor by exactly that much. Shape it as physics
+would -- a parabola under g through the flight, a fast leg extension into it -- or the
+policy is scored against a hop it cannot make.
 
 The clip is written to `tasks/jumper/<task>/media/<name>.npz`, with the source
 table's sha256 for provenance.
@@ -40,8 +44,8 @@ import import_wbc_gestures as gestures
 FORMAT = "scissors-crab-keyframes/1"
 
 
-def read_table(path: Path, names: list[str]) -> tuple[np.ndarray, float, bytes]:
-    """(joints [T, 22] in the robot's channel order, dt, the raw file)."""
+def read_table(path: Path, names: list[str]) -> tuple[np.ndarray, np.ndarray, float, bytes]:
+    """(joints [T, 22] in the robot's channel order, lift [T] in metres, dt, the raw file)."""
     raw = path.read_bytes()
     d = json.loads(raw)
     if d.get("format") != FORMAT:
@@ -50,14 +54,17 @@ def read_table(path: Path, names: list[str]) -> tuple[np.ndarray, float, bytes]:
     if sorted(order) != sorted(names):
         raise ValueError(f"{path}: joint_order is not the robot's 22 joints")
     q = np.asarray(d["q"], dtype=np.float64)[:, [order.index(n) for n in names]]
-    return q, 1.0 / float(d["rate_hz"]), raw
+    lift = np.asarray(d.get("lift", np.zeros(len(q))), dtype=np.float64)
+    if lift.shape != (len(q),) or lift.min() < 0.0:
+        raise ValueError(f"{path}: lift must be one non-negative value per row")
+    return q, lift, 1.0 / float(d["rate_hz"]), raw
 
 
 def convert(path: Path, task: str, name: str | None) -> Path:
     from tasks.jumper.common.constants import HOME
 
     robot = gestures._Robot()
-    q, dt, raw = read_table(path, robot.names)
+    q, lift, dt, raw = read_table(path, robot.names)
     name = name or json.loads(raw)["name"]
 
     lo, hi = robot.range[:, 0], robot.range[:, 1]
@@ -70,8 +77,12 @@ def convert(path: Path, task: str, name: str | None) -> Path:
     lead_out, t_out = gestures._lead(q[-1], home, dt)
     hold = np.repeat(home[None], round(gestures.HOLD_S / dt) + 1, axis=0)
     q = np.concatenate([lead_in, q, lead_out, hold])
+    lift = np.concatenate([np.zeros(len(lead_in)), lift,
+                           np.zeros(len(lead_out) + len(hold))])
 
     pose, height = gestures.solve_resting_pose(robot, q)
+    pose[:, 2] += lift
+    height += lift[:, None]
     lifted = {f: float((height[:, i] >= gestures.DOWN_TOL).mean())
               for i, f in enumerate(gestures.FEET)}
 
@@ -110,6 +121,9 @@ def convert(path: Path, task: str, name: str | None) -> Path:
           f"tilt at most {np.degrees(np.abs(pose[:, 3:5]).max()):.1f} deg, "
           f"travels {np.hypot(*np.ptp(pose[:, :2], axis=0)) * 1000:.0f} mm")
     print("  off the floor: " + ", ".join(f"{f} {v * 100:.0f}%" for f, v in lifted.items()))
+    if lift.any():
+        airborne = (height.min(axis=1) > gestures.DOWN_TOL).sum() * dt
+        print(f"  jumps: up to {lift.max() * 1000:.0f} mm, {airborne:.2f} s airborne in all")
     for jname, by in clamped:
         print(f"  clamped {jname} by up to {by * 1000:.1f} mrad")
     return dest

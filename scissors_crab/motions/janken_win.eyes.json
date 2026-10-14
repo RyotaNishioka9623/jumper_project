@@ -6,10 +6,10 @@
     [2.77, "serious"],
     [4.23, "surprised"],
     [4.37, "happy"],
-    [5.1, "sparkle"],
-    [5.97, "surprised"],
-    [6.3, "shy"],
-    [7.17, "neutral"],
-    [7.57, "shy"]
+    [5.37, "sparkle"],
+    [5.83, "surprised"],
+    [6.1, "shy"],
+    [6.97, "neutral"],
+    [7.3, "shy"]
   ]
 }

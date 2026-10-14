@@ -13,9 +13,10 @@ joint is named after the joint (`LF_J0`, ...): it rotates about that one axis on
 the other two are locked, and a Limit Rotation constraint holds the joint range.
 Rotating it in the viewport is moving that servo. Visual meshes hang under the bodies.
 
-The base stays fixed at the standing height. The real base pose is solved from the
-joint angles when the keyframes are converted (`keyframes_to_npz.py`), so what is
-animated here is joint angles only.
+The base stays at the standing height. The real base pose is solved from the joint
+angles when the keyframes are converted (`keyframes_to_npz.py`), so what is animated
+here is joint angles -- and, for a jump, how far `jumper_root` is raised above its
+rest height (`rest_z`), which the converter adds to the solved height.
 
 Frame 1 is keyed at `HOME`, the pose every gesture starts and ends in.
 """
@@ -92,6 +93,8 @@ def build(home: dict[str, float], stand_z: float) -> list[bpy.types.Object]:
     top.empty_display_type = "CUBE"
     top.empty_display_size = 0.02
     top.location = (0.0, 0.0, stand_z)
+    # Raising the root above this is a jump: export_keyframes.py writes it as `lift`.
+    top["rest_z"] = stand_z
     rig.objects.link(top)
 
     joints: list[bpy.types.Object] = []

@@ -39,6 +39,15 @@ SCISSORS = {"RF_J0_joint": 0.6, "RF_J1_joint": -3.1, "RF_J2_joint": 0.5, "RF_J3_
 COVER = {"RF_J0_joint": 0.5, "RF_J1_joint": -2.4, "RF_J2_joint": 1.2, "RF_J3_joint": 0.8,
          "RF_J4_joint": 0.0}
 
+
+def mirror(arm: dict[str, float]) -> dict[str, float]:
+    """A right-claw pose on the left claw: J1 keeps its sign, J0, J2, J3, J4 flip.
+
+    With LEAN's four feet the left claw is free, so both claws can play: both covering
+    the face (COVER and mirror(COVER)) leave the claws 4 mm apart and the robot on its
+    four feet, checked against the collision geometry and the resting-floor solver."""
+    return {k.replace("RF_", "LF_"): (v if "_J1_" in k else -v) for k, v in arm.items()}
+
 #: The middle and rear legs' J1 moved together from LEAN (left by +d, right by -d):
 #: +0.15 sinks to 104 mm, -0.25 rises to 130 mm, on the same four feet.
 def legs_j1(d: float) -> dict[str, float]:
@@ -53,6 +62,23 @@ def legs_j1(d: float) -> dict[str, float]:
 #: The last frame of the shared opening: "pon" lands 4 frames before it, and every
 #: outcome reacts from here, at once -- the result is known at "pon".
 OPENING_END = 112
+
+
+ROOT = bpy.data.objects["jumper_root"]
+G = 9.81
+
+
+def hop(takeoff: int, landing: int) -> None:
+    """Raise the root through a ballistic flight from `takeoff` to `landing`, keyed on
+    every frame: the parabola g sets for that airtime (0.2 s rises 49 mm). Exported as
+    `lift`, added to the solved height by the converter."""
+    rest = ROOT["rest_z"]
+    flight = (landing - takeoff) / 30.0
+    v0 = G * flight / 2.0
+    for f in range(takeoff, landing + 1):
+        t = (f - takeoff) / 30.0
+        ROOT.location.z = rest + max(0.0, v0 * t - G * t * t / 2.0)
+        ROOT.keyframe_insert("location", index=2, frame=f)
 
 
 def key(frame: int, *layers: dict[str, float]) -> None:
@@ -77,6 +103,8 @@ def opening(snips: bool = True) -> int:
     held still through the practice instead; the timing is the same either way."""
     for obj in J.values():
         obj.animation_data_clear()
+    ROOT.animation_data_clear()
+    ROOT.location.z = ROOT["rest_z"]
     key(1)
     # Practice: the V goes up, snip, snip.
     key(20, LEAN, SCISSORS)
