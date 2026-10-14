@@ -123,6 +123,18 @@ def opening(snips: bool = True) -> int:
     return OPENING_END
 
 
+def set_down(frame: int) -> int:
+    """From any LEAN pose at `frame`, back to HOME without the claws striking first:
+    the claws come down to their HOME angles while the legs still lean (the body is
+    tilted back, so they hover), then the legs settle and the claws meet the floor last.
+    Going straight there let the claws reach the floor before the legs and tipped the
+    body 15 degrees forward in one step. Returns the last frame."""
+    legs = {k: v for k, v in LEAN.items() if not k.startswith("LF_")}
+    key(frame + 14, legs)
+    key(frame + 34)
+    return frame + 34
+
+
 def save(path, last_frame: int) -> None:
     scene = bpy.context.scene
     scene.frame_start, scene.frame_end = 1, last_frame

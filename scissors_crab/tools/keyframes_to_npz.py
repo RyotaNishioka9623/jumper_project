@@ -60,6 +60,54 @@ def read_table(path: Path, names: list[str]) -> tuple[np.ndarray, np.ndarray, fl
     return q, lift, 1.0 / float(d["rate_hz"]), raw
 
 
+#: Fastest the solved body may tilt, deg/s. The resting-floor solver puts the robot on
+#: whichever three feet it would rest on, and when a joint path changes that choice --
+#: a claw coming down below the legs, the centre of mass passing over an edge -- it
+#: changes in one row: the body tips in one step. A real robot rocks over in a moment,
+#: not in no time, and a step is a reference no policy can follow; at the end of the
+#: first janken_win it tipped 15 degrees and back and looked like a hop of the rear.
+#: Keyframed motion here tilts at most ~60 deg/s; a snap is hundreds.
+SNAP_DEG_S = 150.0
+#: Half the window a snap is eased over, seconds: the rock takes 0.3 s.
+SNAP_EASE_S = 0.15
+
+
+def snaps(pose: np.ndarray, dt: float) -> list[tuple[float, float]]:
+    """(time, deg/s) of each place the body's roll or pitch jumps faster than SNAP_DEG_S."""
+    rate = np.degrees(np.abs(np.diff(pose[:, 3:5], axis=0))).max(axis=1) / dt
+    fast = np.nonzero(rate > SNAP_DEG_S)[0]
+    # One report per snap, at its fastest row.
+    out: list[tuple[float, float]] = []
+    for i in fast:
+        if out and i * dt - out[-1][0] < 0.1:
+            if rate[i] > out[-1][1]:
+                out[-1] = (i * dt, float(rate[i]))
+            continue
+        out.append((i * dt, float(rate[i])))
+    return out
+
+
+def ease_snaps(pose: np.ndarray, dt: float) -> int:
+    """Replace the height, roll and pitch around each snap with a smoothstep from the
+    window's first row to its last, in place. x, y and yaw are left alone. Returns how
+    many snaps were eased; key a path that sets the robot down rather than leaning on
+    this for anything large."""
+    w = round(SNAP_EASE_S / dt)
+    eased = 0
+    for _ in range(3):
+        found = snaps(pose, dt)
+        if not found:
+            break
+        for when, _rate in found:
+            i = round(when / dt)
+            a, b = max(0, i - w), min(len(pose) - 1, i + w + 1)
+            u = np.arange(b - a + 1) / (b - a)
+            u = (u * u * (3.0 - 2.0 * u))[:, None]
+            pose[a:b + 1, 2:5] = pose[a, 2:5] + (pose[b, 2:5] - pose[a, 2:5]) * u
+            eased += 1
+    return eased
+
+
 def convert(path: Path, task: str, name: str | None) -> Path:
     from tasks.jumper.common.constants import HOME
 
@@ -81,6 +129,8 @@ def convert(path: Path, task: str, name: str | None) -> Path:
                            np.zeros(len(lead_out) + len(hold))])
 
     pose, height = gestures.solve_resting_pose(robot, q)
+    found = snaps(pose, dt)
+    eased = ease_snaps(pose, dt)
     pose[:, 2] += lift
     height += lift[:, None]
     lifted = {f: float((height[:, i] >= gestures.DOWN_TOL).mean())
@@ -124,6 +174,12 @@ def convert(path: Path, task: str, name: str | None) -> Path:
     if lift.any():
         airborne = (height.min(axis=1) > gestures.DOWN_TOL).sum() * dt
         print(f"  jumps: up to {lift.max() * 1000:.0f} mm, {airborne:.2f} s airborne in all")
+    for when, rate in found:
+        print(f"  eased a snap: the body tipped {rate:.0f} deg/s at {when:.2f} s, where the "
+              f"feet it rests on change")
+    for when, rate in snaps(pose, dt):
+        print(f"  WARNING: the body still tips {rate:.0f} deg/s at {when:.2f} s after easing "
+              f"{eased}; key a path that sets the robot down there")
     for jname, by in clamped:
         print(f"  clamped {jname} by up to {by * 1000:.1f} mrad")
     return dest

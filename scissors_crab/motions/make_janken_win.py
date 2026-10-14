@@ -20,6 +20,7 @@ hops, a double snip -- and then it remembers itself and hides its face in both c
     E+62-76  both claws over the face, fidgeting
     E+86-92  the right claw moves aside: a peek
     E+98-116 hidden again
+    E+150    set down to HOME, the claws first (janken_common.set_down)
 """
 
 from __future__ import annotations
@@ -29,7 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from janken_common import COVER, LEAN, SCISSORS, hop, key, legs_j1, mirror, opening, save
+from janken_common import COVER, LEAN, SCISSORS, hop, key, legs_j1, mirror, opening, save, set_down
 
 OUT = Path(__file__).resolve().with_name("janken_win.blend")
 
@@ -73,7 +74,7 @@ def main() -> None:
     # Hidden again.
     key(e + 98, LEAN, SHRINK, BOTH_HIDE)
     key(e + 116, LEAN, SHRINK, BOTH_HIDE)
-    save(OUT, e + 116)
+    save(OUT, set_down(e + 116))
 
 
 main()
