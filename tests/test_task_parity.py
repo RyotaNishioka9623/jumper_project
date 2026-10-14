@@ -66,6 +66,8 @@ NOT_LOCOMOTION = {
     "jumper.gesture_hello",
     "jumper.gesture_paw",
     "jumper.gesture_salute",
+    # Keyframed janken gestures (scissors_crab/), on the same machinery.
+    "jumper.janken_lose",
     # Walks on five legs with the left-front arm carried as a claw: 16 driven joints
     # instead of 20, five feet in every per-foot term, symmetry off, and a reward
     # set of its own. Set beside the four it would be measuring a leg count, not a
