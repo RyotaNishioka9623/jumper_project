@@ -220,7 +220,7 @@ def stage(stand_z: float) -> None:
     scene.frame_start, scene.frame_end = 1, 90
     scene.unit_settings.system = "METRIC"
 
-    bpy.ops.mesh.primitive_plane_add(size=1.2, location=(0, 0, 0))
+    bpy.ops.mesh.primitive_plane_add(size=4.0, location=(0, 0, 0))
     floor = bpy.context.active_object
     floor.name = "floor"
     floor.hide_select = True

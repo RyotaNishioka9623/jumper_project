@@ -16,6 +16,7 @@ Two kinds of motion are read:
 The motion is resampled to the scene's frame rate and keyed on `jumper_root` (the
 floating base, as a quaternion) and the 22 joints. `--eyes` points at the directory
 `make_eyes.py` writes, whose `R/` and `L/` image sequences become the two displays.
+`--twin` adds a second, mirrored robot facing the first, playing the same motion.
 """
 
 from __future__ import annotations
@@ -121,6 +122,23 @@ def set_eyes(eyes: Path, frames: int) -> None:
                   "it holds its last frame")
 
 
+def add_twin(distance: float) -> None:
+    """A second robot `distance` metres ahead, facing back and mirrored left-right.
+
+    It is an instance of the rig's collection, so it plays the very same motion and
+    face, in step. Mirrored (scale y = -1 under a half turn), its right claw stays on
+    the same side of the stage as the first robot's: the two scissors meet."""
+    import math
+
+    twin = bpy.data.objects.new("twin", None)
+    twin.instance_type = "COLLECTION"
+    twin.instance_collection = bpy.data.collections["jumper_rig"]
+    twin.location = (distance, 0.0, 0.0)
+    twin.rotation_euler = (0.0, 0.0, math.pi)
+    twin.scale = (1.0, -1.0, 1.0)
+    bpy.context.scene.collection.objects.link(twin)
+
+
 def render(out: Path, size: tuple[int, int]) -> None:
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_EEVEE"
@@ -154,6 +172,8 @@ def main() -> None:
                     default=(0.62, -0.38, 0.30), help="camera position, metres")
     ap.add_argument("--look-at", type=float, nargs=3, metavar=("X", "Y", "Z"),
                     default=(0.04, -0.02, 0.10))
+    ap.add_argument("--twin", type=float, metavar="METRES",
+                    help="add a mirrored second robot this far ahead, facing the first")
     args = ap.parse_args(argv)
 
     scene = bpy.context.scene
@@ -164,6 +184,8 @@ def main() -> None:
     print(f"keyed {n} frames ({(n - 1) / fps:.2f} s) from {args.motion.name}")
     if args.eyes:
         set_eyes(args.eyes.resolve(), n)
+    if args.twin:
+        add_twin(args.twin)
     bpy.data.objects["cam"].location = args.camera
     bpy.data.objects["cam_target"].location = args.look_at
     if args.save:

@@ -1,0 +1,17 @@
+{
+  "fps": 30,
+  "keys": [
+    [0.0, "neutral"],
+    [0.9, "sparkle"],
+    [1.4, "serious"],
+    [2.25, "happy"],
+    [3.35, "surprised"],
+    [3.75, "serious"],
+    [4.5, "surprised"],
+    [4.85, "serious"],
+    [5.7, "surprised"],
+    [6.05, "serious"],
+    [6.9, "surprised"],
+    [7.25, "serious"]
+  ]
+}
