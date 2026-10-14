@@ -2,15 +2,14 @@
   "fps": 30,
   "keys": [
     [0.0, "neutral"],
-    [0.9, "sparkle"],
-    [1.4, "serious"],
-    [2.25, "happy"],
-    [4.4, "surprised"],
-    [4.65, "happy"],
-    [5.0, "sparkle"],
-    [5.75, "surprised"],
-    [6.05, "shy"],
-    [7.0, "neutral"],
-    [7.3, "shy"]
+    [0.97, "sparkle"],
+    [2.77, "serious"],
+    [4.23, "surprised"],
+    [4.37, "happy"],
+    [5.1, "sparkle"],
+    [5.97, "surprised"],
+    [6.3, "shy"],
+    [7.17, "neutral"],
+    [7.57, "shy"]
   ]
 }

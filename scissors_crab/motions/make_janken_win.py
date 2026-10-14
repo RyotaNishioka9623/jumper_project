@@ -7,13 +7,14 @@ Writes `scissors_crab/motions/janken_win.blend`; see make_janken_lose.py for how
 .blend takes over from here.
 
     frame  (30 fps)
-    1-116    the shared opening (janken_common.py), ending on scissors
-    E+6      (E = the opening's last frame) the opponent shows paper: the claw jumps up -- it won
-    E+12-42  bouncing with joy, the scissors snipping on every bounce
-    E+46     it remembers itself
-    E+60-74  the claw comes in front of the face: hiding, fidgeting a little
-    E+84     a peek past the claw
-    E+96-114 hidden again
+    1-112    the shared opening (janken_common.py): a practice snip, the game, "pon"
+    E+4      (E = the opening's last frame) the opponent shows paper: the claw jumps
+             up -- it won
+    E+12-52  bouncing with joy, the scissors snipping for real this time
+    E+56     it remembers itself
+    E+70-84  the claw comes in front of the face: hiding, fidgeting a little
+    E+94     a peek past the claw
+    E+106-124 hidden again
 """
 
 from __future__ import annotations
@@ -38,24 +39,24 @@ PEEK = {**COVER, "RF_J0_joint": 0.3, "RF_J1_joint": -2.55}
 def main() -> None:
     e = opening()
     # Paper: it won.
-    key(e + 6, LEAN, SCISSORS, {"RF_J1_joint": -3.3})
-    # Bounce, snipping.
-    for f, legs, j4 in ((12, DOWN, 0.8), (18, UP, 1.5), (24, DOWN, 0.8), (30, UP, 1.5),
-                        (36, DOWN, 0.8), (42, {}, 1.5)):
+    key(e + 4, LEAN, SCISSORS, {"RF_J1_joint": -3.3})
+    # Bounce, snipping with joy: 0.5 s a snip, one bounce each.
+    for f, legs, j4 in ((12, DOWN, 0.8), (20, UP, 1.5), (28, DOWN, 0.8), (36, UP, 1.5),
+                        (44, DOWN, 0.8), (52, {}, 1.5)):
         key(e + f, LEAN, legs, SCISSORS, {"RF_J4_joint": j4})
     # ... and remembers itself.
-    key(e + 46, LEAN, SCISSORS, {"RF_J1_joint": -2.95, "RF_J4_joint": 1.2})
+    key(e + 56, LEAN, SCISSORS, {"RF_J1_joint": -2.95, "RF_J4_joint": 1.2})
     # Hide.
-    key(e + 60, LEAN, SHRINK, COVER)
-    key(e + 67, LEAN, SHRINK, COVER, {"RF_J0_joint": 0.55})
-    key(e + 74, LEAN, SHRINK, COVER)
+    key(e + 70, LEAN, SHRINK, COVER)
+    key(e + 77, LEAN, SHRINK, COVER, {"RF_J0_joint": 0.55})
+    key(e + 84, LEAN, SHRINK, COVER)
     # Peek.
-    key(e + 84, LEAN, SHRINK, PEEK)
-    key(e + 90, LEAN, SHRINK, PEEK)
+    key(e + 94, LEAN, SHRINK, PEEK)
+    key(e + 100, LEAN, SHRINK, PEEK)
     # Hidden again.
-    key(e + 96, LEAN, SHRINK, COVER)
-    key(e + 114, LEAN, SHRINK, COVER)
-    save(OUT, e + 114)
+    key(e + 106, LEAN, SHRINK, COVER)
+    key(e + 124, LEAN, SHRINK, COVER)
+    save(OUT, e + 124)
 
 
 main()

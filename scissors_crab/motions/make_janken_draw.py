@@ -15,7 +15,7 @@ Unlike lose and win, the scissors never snip here: two crabs frozen on scissors,
 facing each other, is the joke.
 
     frame  (30 fps)
-    1-80     the opening without the snips (janken_common.py), ending on scissors
+    1-112    the opening with the practice V held still (janken_common.py), "pon"
     E+4      (E = its last frame) the opponent shows scissors too: a flinch
     E+14     on guard again
     E+14+36k cycle k of three: "ai" (down), up, "ko de" (down), "sho!" (scissors,

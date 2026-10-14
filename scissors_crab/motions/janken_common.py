@@ -1,8 +1,8 @@
 """What every janken clip shares: the poses, and the opening up to the scissors.
 
 Imported by the `make_janken_*.py` scripts, which Blender runs against the rig. Every
-outcome (lose, win, draw) plays the same opening, so the cut between them in the
-edit is seamless; only what follows frame `OPENING_END` differs.
+outcome (lose, win, draw) plays the same opening, frame for frame, so the cut between
+them in the edit is seamless; only what follows frame `OPENING_END` differs.
 
 Joint values are radians. Arm joints J0, J2, J3 and J4 change sign between the left
 and right claws, J1 does not; leg joints all change sign. Poses that move the body
@@ -50,10 +50,9 @@ def legs_j1(d: float) -> dict[str, float]:
     return out
 
 
-#: The last frame of the shared opening, with the snips (lose, win) and without
-#: (draw); each outcome keys its frames from the end of its opening.
-OPENING_END = 116
-OPENING_END_STILL = 80
+#: The last frame of the shared opening: "pon" lands 4 frames before it, and every
+#: outcome reacts from here, at once -- the result is known at "pon".
+OPENING_END = 112
 
 
 def key(frame: int, *layers: dict[str, float]) -> None:
@@ -66,27 +65,32 @@ def key(frame: int, *layers: dict[str, float]) -> None:
 
 
 def opening(snips: bool = True) -> int:
-    """HOME, ready, "jan", "ken", "pon" -- scissors, held still -- and two slow snips.
+    """HOME, ready, a practice swing of the scissors, then "jan", "ken", "pon".
     Returns the opening's last frame.
 
-    The scissors are the joke, so they are shown first: 0.6 s held still after "pon",
-    then two snips at 0.6 s each. (A first cut snipped twice as fast, right on "pon",
-    and read as the claw shaking rather than as scissors.) The draw leaves the snips
-    out: two crabs frozen on scissors is the joke there."""
+    The scissors are the joke, so they come first: raised as a V and snipped twice,
+    slowly (0.6 s a snip), before the game -- the only move this crab has, warmed up.
+    "Pon" then lands just before the end, and every outcome reacts at once. (Earlier
+    cuts snipped after "pon" and only then reacted, as if the result came late.)
+
+    Without `snips` (the draw: two crabs frozen on scissors is the joke there) the V is
+    held still through the practice instead; the timing is the same either way."""
     for obj in J.values():
         obj.animation_data_clear()
     key(1)
-    key(20, LEAN, CLAW_UP)
+    # Practice: the V goes up, snip, snip.
+    key(20, LEAN, SCISSORS)
+    key(26, LEAN, SCISSORS)
+    for f, j4 in ((35, 0.8), (44, 1.5), (53, 0.8), (62, 1.5)):
+        key(f, LEAN, SCISSORS, {"RF_J4_joint": j4 if snips else SCISSORS["RF_J4_joint"]})
+    key(66, LEAN, SCISSORS)
+    # Ready for the game: the claw closes into a fist.
+    key(76, LEAN, CLAW_UP)
     # jan, ken: down on the beat, back up between.
-    for f, j1 in ((32, -2.5), (38, -3.0), (44, -2.5), (50, -3.0)):
+    for f, j1 in ((84, -2.5), (90, -3.0), (96, -2.5), (102, -3.0)):
         key(f, LEAN, CLAW_UP, {"RF_J1_joint": j1})
-    key(56, LEAN, SCISSORS)
-    if not snips:
-        key(OPENING_END_STILL, LEAN, SCISSORS)
-        return OPENING_END_STILL
-    key(74, LEAN, SCISSORS)
-    for f, j4 in ((83, 0.8), (92, 1.5), (101, 0.8), (110, 1.5)):
-        key(f, LEAN, SCISSORS, {"RF_J4_joint": j4})
+    # pon: scissors.
+    key(108, LEAN, SCISSORS)
     key(OPENING_END, LEAN, SCISSORS)
     return OPENING_END
 

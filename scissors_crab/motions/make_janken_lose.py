@@ -11,9 +11,8 @@ Losing is told slowly, so it reads: a flinch at the rock, a frozen blank stare w
 the scissors still up, the head sinking on its own while the scissors wilt, and only
 then the tears -- the claw dropping and the body hitching with sobs.
 
-    frame  (30 fps; E = the opening's last frame, 116)
-    1-E      the shared opening (janken_common.py): ready, "jan", "ken", "pon" --
-             scissors, held -- and two slow snips
+    frame  (30 fps; E = the opening's last frame, 112)
+    1-E      the shared opening (janken_common.py): a practice snip, the game, "pon"
     E+4      the opponent shows rock: a flinch
     E+10-30  frozen on the scissors
     E+30-75  the head sinks (the body pitches nose down 17 degrees, the rear stays up),
