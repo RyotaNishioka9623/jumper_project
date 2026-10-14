@@ -202,6 +202,9 @@ def main() -> None:
                    "the camera where the first frame put it, for a motion that stays put")
     v.add_argument("--video-lookat-height", type=float, default=None, metavar="M",
                    help="height of the point a fixed camera looks at; needs --no-video-follow")
+    v.add_argument("--qpos-out", type=Path, default=None, metavar="NPZ",
+                   help="also write --video-env's full qpos after every control step, to "
+                   "render the replay elsewhere; see mjrl/viewer/qpos_log.py")
 
     r = parser.add_argument_group("replay")
     r.add_argument(
@@ -468,6 +471,7 @@ def _run(spec, res, asset: Path | None, args) -> None:
     # into `UnboundLocalError: monitor`, printed *instead of* the reason.
     monitor = None
     video = None
+    qpos_log = None
     policy = None
     try:
         wrapped = RslRlVecEnvWrapper(env, clip_actions=agent_cfg.clip_actions)
@@ -538,6 +542,10 @@ def _run(spec, res, asset: Path | None, args) -> None:
                     lookat_height=args.video_lookat_height, follow=args.video_follow,
                 )
                 video.__enter__()
+            if args.qpos_out is not None:
+                from mjrl.viewer.qpos_log import QposLog
+
+                qpos_log = QposLog(env, args.qpos_out, env_index=args.video_env)
             # Real time when someone is watching. `--headless` is the audit path
             # -- a scripted run measuring something, where pacing would only make
             # it take twenty times longer for no one's benefit -- so it is
@@ -557,7 +565,7 @@ def _run(spec, res, asset: Path | None, args) -> None:
             ) else None
             completed_steps = _loop(wrapped, policy, viewer, args.steps, speed,
                                     status or _speed_text, monitor, video, evaluation,
-                                    stop_on_done=args.stop_on_done)
+                                    stop_on_done=args.stop_on_done, qpos_log=qpos_log)
             replay_metadata = {
                 "task": spec.id, "checkpoint": str(ckpt.resolve()) if ckpt else None,
                 "physics_hz": 1.0 / env_cfg.sim.mujoco.timestep,
@@ -595,6 +603,9 @@ def _run(spec, res, asset: Path | None, args) -> None:
         # tears down lands under mjlab's own shutdown output.
         # A failed encoder must still release the simulation and app resources.
         try:
+            if qpos_log is not None:
+                qpos_log.close()
+                print(f"[mjrl] qpos {qpos_log.path.resolve()} ({qpos_log.steps} steps)")
             if video is not None:
                 video.close()
                 print(f"[mjrl] video {video.path.resolve()} "
@@ -659,7 +670,7 @@ def _speed_text(entity, index: int, env) -> str:
 
 def _loop(env, policy, viewer, max_steps: int | None, speed: float = 1.0,
           readout=_speed_text, monitor=None, video=None, evaluation=None,
-          stop_on_done: bool = False) -> int:
+          stop_on_done: bool = False, qpos_log=None) -> int:
     """Step the environment under the policy until the window closes.
 
     Returns the number of control steps taken. With `stop_on_done` the loop ends
@@ -721,6 +732,8 @@ def _loop(env, policy, viewer, max_steps: int | None, speed: float = 1.0,
             monitor.update()
         if video is not None:
             video.update()
+        if qpos_log is not None:
+            qpos_log.update()
         step += 1
     return step
 

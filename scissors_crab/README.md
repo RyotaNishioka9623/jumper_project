@@ -18,6 +18,10 @@
 | `scissors_crab/blender/export_keyframes.py` | リグに付けた関節アニメーションを、キーフレーム表（`.keyframes.json`）として書き出す |
 | `scissors_crab/tools/keyframes_to_npz.py` | キーフレーム表を学習用のクリップ（`.npz`）に変換する |
 | `scissors_crab/tools/preview_clip.py` | 学習前に、クリップをMuJoCoで再生して動画にする |
+| `scissors_crab/tools/make_eyes.py` | 目の表情を描き、タイムラインに沿って連番画像と実機用の動画にする |
+| `scissors_crab/blender/import_motion.py` | 記録した動きと表情をリグに読み込み、Blenderで描画する |
+| `scripts/play.py --qpos-out` | （公式スクリプトに追加）再生中の全状態を毎ステップ記録する（`rl/mjrl/viewer/qpos_log.py`） |
+| `scissors_crab/assets/eyes/` | 各表情の静止画（リグの初期表示用） |
 | `tasks/jumper/common/janken.py` | じゃんけんタスクの共通設定。報酬などの数値はクリップから計算する |
 | `tasks/jumper/janken_*/` | 結果ごとのタスク（`janken_lose` など） |
 | `scissors_crab/motions/` | 振り付けの `.blend` と、そこから書き出したキーフレーム表 |
@@ -57,10 +61,35 @@ blender scissors_crab/motions/janken_lose.blend --background \
     --backend native --device cpu --num_envs 64 --max-iterations 5
 ```
 
-Colabでは、公式の [Colabノートブック](../docs/COLAB.md) で次のように設定します。
+Colabでは [scissors_crab/colab/scissors_crab_colab.ipynb](colab/scissors_crab_colab.ipynb) を使います。公式ノートブックのコピーで、このリポジトリとじゃんけんタスクが初期値になっています。
+[Colabで開く](https://colab.research.google.com/github/RyotaNishioka9623/jumper_project/blob/main/scissors_crab/colab/scissors_crab_colab.ipynb)
 
-- `REPOSITORY_URL`：このリポジトリ
-- `TASK`：`jumper.janken_lose` など
+## 動画にする（表情つき）
+
+学習した動きはシミュレーターで記録し、Blenderで目の表情をつけて描画します。
+
+```bash
+# 1. 学習した方策の動きを記録する（胴体と全関節の状態 qpos を毎ステップ保存）
+.venv/bin/python scripts/play.py --task jumper.janken_lose --headless --num_envs 1 \
+    --steps 290 --qpos-out scissors_crab/renders/janken_lose/rollout.npz
+
+# 2. 目の表情をタイムラインに沿って作る（黒地に水色、実機ディスプレイと同じ132×132の動画も出力）
+.venv/bin/python scissors_crab/tools/make_eyes.py scissors_crab/motions/janken_lose.eyes.json \
+    --duration 5.8 --out scissors_crab/renders/janken_lose/eyes
+
+# 3. Blenderに読み込んで描画する
+blender scissors_crab/blender/jumper_rig.blend --background \
+    --python scissors_crab/blender/import_motion.py -- \
+    scissors_crab/renders/janken_lose/rollout.npz \
+    --eyes scissors_crab/renders/janken_lose/eyes \
+    --save scissors_crab/renders/janken_lose/scene.blend \
+    --render scissors_crab/renders/janken_lose/janken_lose.mp4
+```
+
+`import_motion.py` には、タスクのクリップ（`media/*.npz`）も渡せます。学習前のお手本をBlenderで確認するときに使います。
+
+表情の種類は `neutral`、`blink`、`serious`、`sad`、`surprised`、`happy`、`shy`、`sparkle` です。
+`make_eyes.py --sheet sheet.png` で一覧を確認できます。タイムラインは `{"fps": 30, "keys": [[秒, "表情"], ...]}` 形式で、`neutral` の間は自動でまばたきします。
 
 ## 注意
 

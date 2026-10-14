@@ -152,6 +152,63 @@ def build(home: dict[str, float], stand_z: float) -> list[bpy.types.Object]:
     return joints
 
 
+#: The face: two round 0.9-inch TFTs (docs/HARDWARE.md) on the display module's front
+#: panel. The panel's outward normal and the centre of its front face, in the base
+#: frame, measured from `display_module_link`'s mesh (area-weighted over the faces
+#: with that normal). The eyes' spacing is not in the model: the panel is 107 mm wide
+#: and the eyes are set symmetric on it.
+PANEL_NORMAL = (0.8, 0.0, 0.6)
+PANEL_CENTRE = (0.0764, 0.0, 0.0541)
+EYE_RADIUS = 0.0229 / 2
+EYE_SPACING = 0.052
+EYES_DIR = REPO / "scissors_crab" / "assets" / "eyes"
+
+
+def eye_material(side: str) -> bpy.types.Material:
+    """Emission from an image: a still by default, an image sequence once a motion is
+    imported (`import_motion.py` swaps the image)."""
+    mat = bpy.data.materials.new(f"eye_{side}")
+    mat.use_nodes = True
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    nodes.clear()
+    tex = nodes.new("ShaderNodeTexImage")
+    tex.name = "eye_image"
+    tex.image = bpy.data.images.load(str(EYES_DIR / f"neutral_{side}.png"))
+    emit = nodes.new("ShaderNodeEmission")
+    emit.inputs["Strength"].default_value = 1.2
+    out = nodes.new("ShaderNodeOutputMaterial")
+    links.new(tex.outputs["Color"], emit.inputs["Color"])
+    links.new(emit.outputs["Emission"], out.inputs["Surface"])
+    return mat
+
+
+def add_eyes(rig: bpy.types.Collection) -> None:
+    from mathutils import Matrix, Vector
+
+    base = bpy.data.objects["base_link"]
+    n = Vector(PANEL_NORMAL).normalized()
+    up = (Vector((0, 0, 1)) - n * n.z).normalized()
+    # The picture's x runs to the viewer's right, facing the robot: the robot's +y.
+    x = Vector((0, 1, 0))
+    rot = Matrix((x, up, n)).transposed()
+    # R is the robot's right eye, at -y; its picture is drawn for the viewer's left.
+    for side, y in (("R", -EYE_SPACING / 2), ("L", EYE_SPACING / 2)):
+        bpy.ops.mesh.primitive_circle_add(vertices=64, radius=EYE_RADIUS, fill_type="NGON")
+        eye = bpy.context.active_object
+        eye.name = f"eye_{side}"
+        uv = eye.data.uv_layers.new(name="UVMap")
+        for loop in eye.data.loops:
+            co = eye.data.vertices[loop.vertex_index].co
+            uv.data[loop.index].uv = (co.x / (2 * EYE_RADIUS) + 0.5, co.y / (2 * EYE_RADIUS) + 0.5)
+        eye.data.materials.append(eye_material(side))
+        eye.parent = base
+        centre = Vector(PANEL_CENTRE) + Vector((0, y, 0)) + n * 0.0008
+        eye.matrix_parent_inverse.identity()
+        eye.matrix_basis = Matrix.Translation(centre) @ rot.to_4x4()
+        eye.hide_select = True
+        link(eye, rig)
+
+
 def key_home(joints: list[bpy.types.Object]) -> None:
     for obj in joints:
         obj.keyframe_insert("rotation_euler", index=obj["axis"], frame=1)
@@ -200,6 +257,7 @@ def main() -> None:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     home, stand_z = read_home()
     joints = build(home, stand_z)
+    add_eyes(bpy.data.collections["jumper_rig"])
     key_home(joints)
     stage(stand_z)
     bpy.context.view_layer.update()
