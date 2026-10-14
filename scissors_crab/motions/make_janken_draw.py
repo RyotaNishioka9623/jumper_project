@@ -11,15 +11,16 @@ In the video two robots face each other playing this clip, one mirrored, in step
 the draws go on until the picture fades out. Each "aiko de sho" cycle starts and ends
 on the scissors pose, so the edit can repeat a cycle for as long as it likes.
 
-Unlike lose and win, the scissors never snip here: two crabs frozen on scissors,
-facing each other, is the joke.
+Unlike lose and win, nothing here reacts: no snip, no flinch at the other crab's
+scissors, the eyes serious throughout. Two crabs frozen on scissors, staring each other
+down and going again without a word, is the joke.
 
     frame  (30 fps)
     1-112    the opening with the practice V held still (janken_common.py), "pon"
-    E+4      (E = its last frame) the opponent shows scissors too: a flinch
-    E+14     on guard again
+    E-E+14   (E = its last frame) held still on scissors
     E+14+36k cycle k of three: "ai" (down), up, "ko de" (down), "sho!" (scissors,
              frame +24), held still, back on scissors at +36
+    then     set down to HOME, the claws first (janken_common.set_down)
 """
 
 from __future__ import annotations
@@ -29,7 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from janken_common import CLAW_UP, LEAN, SCISSORS, key, opening, save
+from janken_common import CLAW_UP, LEAN, SCISSORS, key, opening, save, set_down
 
 OUT = Path(__file__).resolve().with_name("janken_draw.blend")
 
@@ -39,9 +40,7 @@ CYCLES = 3
 
 def main() -> None:
     e = opening(snips=False)
-    # Scissors against scissors.
-    key(e + 4, LEAN, SCISSORS, {"RF_J1_joint": -3.3, "RF_J0_joint": 0.45})
-    key(e + 10, LEAN, SCISSORS)
+    # Scissors against scissors: nothing moves.
     first = e + 14
     key(first, LEAN, SCISSORS)
     for k in range(CYCLES):
@@ -50,7 +49,7 @@ def main() -> None:
             key(s + offset, LEAN, CLAW_UP, {"RF_J1_joint": j1})
         key(s + 24, LEAN, SCISSORS)
         key(s + CYCLE, LEAN, SCISSORS)
-    save(OUT, first + CYCLES * CYCLE)
+    save(OUT, set_down(first + CYCLES * CYCLE))
 
 
 main()

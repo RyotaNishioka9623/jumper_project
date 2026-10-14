@@ -3,14 +3,6 @@
   "keys": [
     [0.0, "neutral"],
     [0.97, "sparkle"],
-    [2.77, "serious"],
-    [4.23, "surprised"],
-    [4.57, "serious"],
-    [5.37, "surprised"],
-    [5.72, "serious"],
-    [6.57, "surprised"],
-    [6.92, "serious"],
-    [7.77, "surprised"],
-    [8.12, "serious"]
+    [2.77, "serious"]
   ]
 }
