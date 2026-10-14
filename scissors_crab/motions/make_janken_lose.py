@@ -7,12 +7,20 @@ Writes `scissors_crab/motions/janken_lose.blend`. From there the .blend is the s
 open it, adjust the keys in Blender, and export as usual (README). Re-running this
 script overwrites the .blend, so it is only for starting over.
 
-    frame  (30 fps)
-    1-116    the shared opening (janken_common.py): ready, "jan", "ken", "pon" --
+Losing is told slowly, so it reads: a flinch at the rock, a frozen blank stare with
+the scissors still up, the head sinking on its own while the scissors wilt, and only
+then the tears -- the claw dropping and the body hitching with sobs.
+
+    frame  (30 fps; E = the opening's last frame, 116)
+    1-E      the shared opening (janken_common.py): ready, "jan", "ken", "pon" --
              scissors, held -- and two slow snips
-    E+4      (E = the opening's last frame) the opponent shows rock: a flinch
-    E+14-39  the claw sinks, the scissors close, the body slumps on five feet
-    E+39-69  hold, drooping a little further
+    E+4      the opponent shows rock: a flinch
+    E+10-30  frozen on the scissors
+    E+30-75  the head sinks (the body pitches nose down 17 degrees, the rear stays up),
+             the scissors wilt
+    E+85-100 the claw drops: crying
+    E+100-150 two pairs of sobs
+    E+170    end
 """
 
 from __future__ import annotations
@@ -26,34 +34,44 @@ from janken_common import LEAN, SCISSORS, key, opening, save
 
 OUT = Path(__file__).resolve().with_name("janken_lose.blend")
 
-#: Slumped. Folding the legs alone would only lift them off the floor while the left
-#: claw holds the body up, so the left claw folds too (`LF_J1`) and the body sinks on
-#: five feet. Searched with the converter's resting-floor solver: 92 mm (the lean is
-#: 115), nose down 2.5 degrees, every joint inside its soft limit.
-SLUMP = {
-    "LF_J0_joint": -0.5507, "LF_J1_joint": -1.2658, "LF_J2_joint": -0.4408, "LF_J3_joint": -1.374,
-    "LM_J0_joint": 0.0012, "LM_J1_joint": 0.7356, "LM_J2_joint": -1.8271,
-    "RM_J0_joint": -0.0012, "RM_J1_joint": -0.7376, "RM_J2_joint": 1.8313,
-    "LR_J0_joint": 0.6313, "LR_J1_joint": 0.6534, "LR_J2_joint": -1.8648,
-    "RR_J0_joint": -0.6326, "RR_J1_joint": -0.6548, "RR_J2_joint": 1.8678,
-}
-#: A little further: 91 mm, nose down 2.0 degrees.
-SLUMP_DEEPER = {"LM_J1_joint": 0.8356, "LM_J2_joint": -2.0271, "RM_J1_joint": -0.8376,
-                "RM_J2_joint": 2.0313, "LR_J1_joint": 0.7534, "LR_J2_joint": -1.9648,
-                "RR_J1_joint": -0.7548, "RR_J2_joint": 1.9678}
-CLAW_DOWN = {"RF_J0_joint": 0.45, "RF_J1_joint": -1.25, "RF_J2_joint": 0.6, "RF_J3_joint": 1.5,
-             "RF_J4_joint": 0.25}
+#: Head down, from LEAN: the rear legs straighten (J1) and the middle legs and the left
+#: claw fold, so the front sinks and the rear stays up. Searched with the converter's
+#: resting-floor solver: nose down 16.8 degrees (the lean is 8 degrees nose up),
+#: 108 mm, on five feet, every joint inside its soft limit.
+HEAD_DOWN = {"LF_J1_joint": -1.4727, "LM_J2_joint": -1.0407, "RM_J2_joint": 1.0439,
+             "LR_J1_joint": -0.0004, "LR_J2_joint": -1.6041, "RR_J1_joint": -0.0012,
+             "RR_J2_joint": 1.6079}
+#: The scissors half lowered, half closed.
+WILT = {"RF_J0_joint": 0.5, "RF_J1_joint": -2.6, "RF_J2_joint": 0.6, "RF_J3_joint": 0.6,
+        "RF_J4_joint": 0.6}
+#: The claw hanging: 25 mm off the floor with the body pitched down (-1.6 would touch).
+DROOP = {"RF_J0_joint": 0.45, "RF_J1_joint": -1.75, "RF_J2_joint": 0.6, "RF_J3_joint": 1.2,
+         "RF_J4_joint": 0.2}
+
+
+def sob(d: float) -> dict[str, float]:
+    """A hitch: the middle legs' J2 moved by d from HEAD_DOWN (+0.08 dips the head to
+    17.2 degrees, -0.08 lifts it to 14.9)."""
+    return {"LM_J2_joint": HEAD_DOWN["LM_J2_joint"] + d,
+            "RM_J2_joint": HEAD_DOWN["RM_J2_joint"] - d}
 
 
 def main() -> None:
     e = opening()
-    # Rock: a small flinch back.
+    # Rock: a flinch, then frozen.
     key(e + 4, LEAN, SCISSORS, {"RF_J1_joint": -3.3, "RF_J0_joint": 0.45})
-    key(e + 14, LEAN, SCISSORS, {"RF_J1_joint": -2.9, "RF_J4_joint": 1.1})
-    # Lose: everything sinks.
-    key(e + 39, LEAN, SLUMP, CLAW_DOWN)
-    key(e + 69, LEAN, SLUMP, SLUMP_DEEPER, CLAW_DOWN, {"RF_J1_joint": -1.15})
-    save(OUT, e + 69)
+    key(e + 10, LEAN, SCISSORS)
+    key(e + 30, LEAN, SCISSORS)
+    # The head sinks, slowly; the scissors wilt.
+    key(e + 75, LEAN, HEAD_DOWN, WILT)
+    key(e + 85, LEAN, HEAD_DOWN, WILT)
+    # Crying.
+    key(e + 100, LEAN, HEAD_DOWN, DROOP)
+    for f, d in ((105, 0.08), (110, -0.08), (115, 0.08), (120, 0.0),
+                 (135, 0.08), (140, -0.08), (145, 0.08), (150, 0.0)):
+        key(e + f, LEAN, HEAD_DOWN, DROOP, sob(d))
+    key(e + 170, LEAN, HEAD_DOWN, DROOP)
+    save(OUT, e + 170)
 
 
 main()

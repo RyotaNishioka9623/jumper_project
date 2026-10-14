@@ -85,6 +85,25 @@ def sad(d, k):
                (x * k, (y - 17) * k)], fill=TEAR)
 
 
+def _tear(d, k, x, y, r) -> None:
+    d.ellipse([(x - r) * k, (y - r) * k, (x + r) * k, (y + r) * k], fill=TEAR)
+    d.polygon([((x - r * 0.85) * k, (y - 3) * k), ((x + r * 0.85) * k, (y - 3) * k),
+               (x * k, (y - 2.4 * r) * k)], fill=TEAR)
+
+
+def cry(d, k):
+    # sad, with the tear further down its fall and a second one welling up: alternate
+    # with `sad` and the tears run.
+    _slanted(d, k, inner_drop=-26)
+    _tear(d, k, 34, 120, 7)
+    _tear(d, k, 38, 96, 5)
+
+
+def blank(d, k):
+    # Expressionless: two small dots, and -- unlike neutral -- no blinking.
+    d.rounded_rectangle(_box(66, 70, 20, 20, k), radius=6 * k, fill=CYAN)
+
+
 def surprised(d, k):
     d.ellipse(_box(66, 64, 62, 62, k), fill=CYAN)
 
@@ -114,8 +133,8 @@ def sparkle(d, k):
     d.polygon(pts, fill=CYAN)
 
 
-EXPRESSIONS = {f.__name__: f for f in (neutral, blink, serious, sad, surprised, happy, shy,
-                                       sparkle)}
+EXPRESSIONS = {f.__name__: f for f in (neutral, blink, serious, sad, cry, blank, surprised,
+                                       happy, shy, sparkle)}
 
 
 def draw(name: str, size: int, mirror: bool) -> Image.Image:
@@ -129,7 +148,7 @@ def draw(name: str, size: int, mirror: bool) -> Image.Image:
 def sheet(path: Path) -> None:
     names = list(EXPRESSIONS)
     cell = 2 * NATIVE + 12
-    out = Image.new("RGB", (cell * 4, cell * 2), (40, 40, 40))
+    out = Image.new("RGB", (cell * 4, cell * math.ceil(len(names) / 4)), (40, 40, 40))
     for i, name in enumerate(names):
         x, y = (i % 4) * cell + 4, (i // 4) * cell + 4
         out.paste(draw(name, NATIVE, mirror=False), (x, y))
