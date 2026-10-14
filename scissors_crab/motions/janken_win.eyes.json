@@ -5,12 +5,12 @@
     [0.9, "sparkle"],
     [1.4, "serious"],
     [2.25, "happy"],
-    [3.4, "surprised"],
-    [3.65, "happy"],
-    [4.0, "sparkle"],
-    [4.75, "surprised"],
-    [5.05, "shy"],
-    [6.0, "neutral"],
-    [6.3, "shy"]
+    [4.4, "surprised"],
+    [4.65, "happy"],
+    [5.0, "sparkle"],
+    [5.75, "surprised"],
+    [6.05, "shy"],
+    [7.0, "neutral"],
+    [7.3, "shy"]
   ]
 }

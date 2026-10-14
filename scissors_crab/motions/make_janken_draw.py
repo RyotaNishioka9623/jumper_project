@@ -11,12 +11,15 @@ In the video two robots face each other playing this clip, one mirrored, in step
 the draws go on until the picture fades out. Each "aiko de sho" cycle starts and ends
 on the scissors pose, so the edit can repeat a cycle for as long as it likes.
 
+Unlike lose and win, the scissors never snip here: two crabs frozen on scissors,
+facing each other, is the joke.
+
     frame  (30 fps)
-    1-86     the shared opening (janken_common.py), ending on scissors
-    90       the opponent shows scissors too: a flinch
-    100      on guard again
-    100+36k  cycle k of three: "ai" (down), up, "ko de" (down), "sho!" (scissors,
-             frame +24), a snip, and back to scissors at +36
+    1-80     the opening without the snips (janken_common.py), ending on scissors
+    E+4      (E = its last frame) the opponent shows scissors too: a flinch
+    E+14     on guard again
+    E+14+36k cycle k of three: "ai" (down), up, "ko de" (down), "sho!" (scissors,
+             frame +24), held still, back on scissors at +36
 """
 
 from __future__ import annotations
@@ -32,23 +35,22 @@ OUT = Path(__file__).resolve().with_name("janken_draw.blend")
 
 CYCLE = 36
 CYCLES = 3
-FIRST = 100
 
 
 def main() -> None:
-    opening()
+    e = opening(snips=False)
     # Scissors against scissors.
-    key(90, LEAN, SCISSORS, {"RF_J1_joint": -3.3, "RF_J0_joint": 0.45})
-    key(96, LEAN, SCISSORS, {"RF_J4_joint": 1.2})
-    key(FIRST, LEAN, SCISSORS)
+    key(e + 4, LEAN, SCISSORS, {"RF_J1_joint": -3.3, "RF_J0_joint": 0.45})
+    key(e + 10, LEAN, SCISSORS)
+    first = e + 14
+    key(first, LEAN, SCISSORS)
     for k in range(CYCLES):
-        s = FIRST + k * CYCLE
+        s = first + k * CYCLE
         for offset, j1 in ((6, -2.5), (12, -3.0), (18, -2.5)):
             key(s + offset, LEAN, CLAW_UP, {"RF_J1_joint": j1})
         key(s + 24, LEAN, SCISSORS)
-        key(s + 30, LEAN, SCISSORS, {"RF_J4_joint": 0.8})
         key(s + CYCLE, LEAN, SCISSORS)
-    save(OUT, FIRST + CYCLES * CYCLE)
+    save(OUT, first + CYCLES * CYCLE)
 
 
 main()

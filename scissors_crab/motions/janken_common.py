@@ -50,8 +50,10 @@ def legs_j1(d: float) -> dict[str, float]:
     return out
 
 
-#: The last frame of the shared opening; each outcome continues from here.
-OPENING_END = 86
+#: The last frame of the shared opening, with the snips (lose, win) and without
+#: (draw); each outcome keys its frames from the end of its opening.
+OPENING_END = 116
+OPENING_END_STILL = 80
 
 
 def key(frame: int, *layers: dict[str, float]) -> None:
@@ -63,8 +65,14 @@ def key(frame: int, *layers: dict[str, float]) -> None:
         obj.keyframe_insert("rotation_euler", index=obj["axis"], frame=frame)
 
 
-def opening() -> None:
-    """HOME, ready, "jan", "ken", "pon" -- scissors -- and a snip-snip, to frame 86."""
+def opening(snips: bool = True) -> int:
+    """HOME, ready, "jan", "ken", "pon" -- scissors, held still -- and two slow snips.
+    Returns the opening's last frame.
+
+    The scissors are the joke, so they are shown first: 0.6 s held still after "pon",
+    then two snips at 0.6 s each. (A first cut snipped twice as fast, right on "pon",
+    and read as the claw shaking rather than as scissors.) The draw leaves the snips
+    out: two crabs frozen on scissors is the joke there."""
     for obj in J.values():
         obj.animation_data_clear()
     key(1)
@@ -73,9 +81,14 @@ def opening() -> None:
     for f, j1 in ((32, -2.5), (38, -3.0), (44, -2.5), (50, -3.0)):
         key(f, LEAN, CLAW_UP, {"RF_J1_joint": j1})
     key(56, LEAN, SCISSORS)
-    for f, j4 in ((62, 0.8), (68, 1.5), (74, 0.8), (80, 1.5)):
+    if not snips:
+        key(OPENING_END_STILL, LEAN, SCISSORS)
+        return OPENING_END_STILL
+    key(74, LEAN, SCISSORS)
+    for f, j4 in ((83, 0.8), (92, 1.5), (101, 0.8), (110, 1.5)):
         key(f, LEAN, SCISSORS, {"RF_J4_joint": j4})
     key(OPENING_END, LEAN, SCISSORS)
+    return OPENING_END
 
 
 def save(path, last_frame: int) -> None:

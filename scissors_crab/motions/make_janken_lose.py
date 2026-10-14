@@ -8,11 +8,11 @@ open it, adjust the keys in Blender, and export as usual (README). Re-running th
 script overwrites the .blend, so it is only for starting over.
 
     frame  (30 fps)
-    1-86     the shared opening (janken_common.py): ready, "jan", "ken", "pon" --
-             scissors -- and a snip-snip
-    90       the opponent shows rock: a flinch
-    100-125  the claw sinks, the scissors close, the body slumps on five feet
-    125-155  hold, drooping a little further
+    1-116    the shared opening (janken_common.py): ready, "jan", "ken", "pon" --
+             scissors, held -- and two slow snips
+    E+4      (E = the opening's last frame) the opponent shows rock: a flinch
+    E+14-39  the claw sinks, the scissors close, the body slumps on five feet
+    E+39-69  hold, drooping a little further
 """
 
 from __future__ import annotations
@@ -46,14 +46,14 @@ CLAW_DOWN = {"RF_J0_joint": 0.45, "RF_J1_joint": -1.25, "RF_J2_joint": 0.6, "RF_
 
 
 def main() -> None:
-    opening()
+    e = opening()
     # Rock: a small flinch back.
-    key(90, LEAN, SCISSORS, {"RF_J1_joint": -3.3, "RF_J0_joint": 0.45})
-    key(100, LEAN, SCISSORS, {"RF_J1_joint": -2.9, "RF_J4_joint": 1.1})
+    key(e + 4, LEAN, SCISSORS, {"RF_J1_joint": -3.3, "RF_J0_joint": 0.45})
+    key(e + 14, LEAN, SCISSORS, {"RF_J1_joint": -2.9, "RF_J4_joint": 1.1})
     # Lose: everything sinks.
-    key(125, LEAN, SLUMP, CLAW_DOWN)
-    key(155, LEAN, SLUMP, SLUMP_DEEPER, CLAW_DOWN, {"RF_J1_joint": -1.15})
-    save(OUT, 155)
+    key(e + 39, LEAN, SLUMP, CLAW_DOWN)
+    key(e + 69, LEAN, SLUMP, SLUMP_DEEPER, CLAW_DOWN, {"RF_J1_joint": -1.15})
+    save(OUT, e + 69)
 
 
 main()
