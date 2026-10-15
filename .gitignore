@@ -75,3 +75,4 @@ MUJOCO_LOG.TXT
 scissors_crab/blender/jumper_rig.blend
 *.blend1
 scissors_crab/renders/
+scissors_crab/external/
