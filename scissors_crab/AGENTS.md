@@ -80,6 +80,7 @@ Blender で振り付け（jumper_rig.blend にキーフレーム）
 | `tasks/jumper/common/janken.py` | 環境設定の数値をクリップから計算 |
 | `tasks/jumper/common/janken_jump.py` | ジャンプの区間を見つけ、その区間だけ電力・トルクの減点を外し、高さ・上下速度・接地状態の評価を足す（janken_win_jump が使う） |
 | `scripts/play.py --qpos-out` | （公式に追加）再生中の全状態を記録（`rl/mjrl/viewer/qpos_log.py`） |
+| `interactive/janken_cam.py` | カメラ版（MediaPipe）。Mac のカメラで手を読み、3つの学習済み方策（環境を1つずつ、ネイティブ・CPU）を実時間で動かす。「ぽん」「しょ」で qpos・qvel・直前の指令を結果の方策の環境へ引き継ぐ。あいこは最後の1周をループ。`--no-camera` と `--script` でカメラなしの確認、`--record` で録画 |
 | `tools/make_eyes.py` | 目の表情の描画、タイムラインから連番画像と 132px の実機用動画 |
 | `blender/import_motion.py` | 動き＋目をリグに載せて描画（`--twin` で鏡写しの2台目、`--frames` で区間指定） |
 | `blender/import_scene.py` | `.map` を背景として読み込む |
@@ -110,6 +111,7 @@ Blender で振り付け（jumper_rig.blend にキーフレーム）
 - **書き出し後の確認**：全フレームをピンク（R>180, B>180, G<110）で検査する。字幕は最初の画面から出すものに `"fade_in": false`
 - **編集リスト**：`edit/make_scissors_crab.py` が描画フレーム番号からテロップ16個と効果音24個の時刻を計算し、`edit/scissors_crab.json` を書く。約23秒。`tools/edit.py` に効果音の `dur`（途中で切る）と全体の `gain_db`（＋リミッター）を追加した。テロップの大きさは1080p用（本文92、題110、クレジット48）
 - 注意：学習ログの `feet_clearance` は、ジャンプを含まない試行とも平均されるので小さく出る（win_jump で0.007）。成否は再生して足の形状の最下点で測る
+- **カメラ版**（2026-10-15）：`interactive/janken_cam.py`。MediaPipe 1.1.1 を .venv に入れ、Google 公式の `gesture_recognizer.task` を `external/models/` に置いた（ユーザー了承済み）。手の判定は4本の指の伸び（第2関節前後の角度と手首からの距離）で行い、判定できないときだけ MediaPipe のジェスチャー（Closed_Fist / Open_Palm / Victory）を使う。合成した手で20通り（4種×5方向）確認済み。カメラなしの台本で、あいこ→あいこ→勝ち、負けの流れを確認済み。**実際のカメラでの確認はユーザーが行う**（macOS のカメラ許可が必要）
 - 次の作業：
   1. 第3版 `renders/final/scissors_crab.mp4`（22.4秒、1920×1080）をユーザーが確認中。締めのカットは `win_ending.mp4`（〜301）＋`win_ending_rest.mp4`（302〜540）。字幕や効果音を直すときは `edit/make_scissors_crab.py` を編集して再生成（描画は不要、約15秒）
   2. 投稿文の確認（下書きは `post/x_posts.md`、本投稿244字・返信3本・日本語の引用190字。メンションは @KingKongRobo）

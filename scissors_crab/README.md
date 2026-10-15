@@ -145,6 +145,32 @@ ffmpeg -i $OUT/thumbnail.mp4 -frames:v 1 $OUT/thumbnail.png
 
 テロップや効果音のタイミングを変えるときは `edit/make_scissors_crab.py` を直して 4. だけやり直します（描画のやり直しは不要）。
 
+## カメラでじゃんけん（MediaPipe、Mac）
+
+Mac のカメラで人の手（グー・チョキ・パー）を MediaPipe で読み取り、学習済みの3つの方策（負け・勝ち・あいこ）がその場でシミュレーションのカニを動かします。カニはチョキしか出せないので、人がグーなら負け、パーなら勝ち、チョキか手が見えないときはあいこで、「あいこでしょ」の「しょ」ごとにもう一度出せます。
+
+```bash
+# 初回だけ：MediaPipe（.venv に）と、Google 公式のジェスチャー認識モデル（8.4MB、Git 管理外）
+.venv/bin/python -m pip install mediapipe==1.1.1
+mkdir -p scissors_crab/external/models
+curl -L -o scissors_crab/external/models/gesture_recognizer.task \
+    https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task
+
+# 遊ぶ（スペースで開始、r / p / s で手を指定、q で終了）
+.venv/bin/python scissors_crab/interactive/janken_cam.py
+
+# 画面ごと録画する（デモ動画用）
+.venv/bin/python scissors_crab/interactive/janken_cam.py --record scissors_crab/renders/live/demo.mp4
+
+# カメラなしで確認する（台本どおりに手を出す）
+.venv/bin/python scissors_crab/interactive/janken_cam.py --no-camera --headless \
+    --script "start@0.5,rock@1.5" --seconds 10 --record check.mp4
+```
+
+- 初めてカメラを使うとき、macOS がターミナルアプリにカメラの許可を求めます（システム設定 → プライバシーとセキュリティ → カメラ）。
+- 方策・目の連番は `renders/` の学習結果（負け `janken_lose/1fb58d6`、勝ち `janken_win_jump/a1f8d50`、あいこ `janken_draw/97f28f8`）を使います。
+- 「ぽん」と「しょ」の瞬間に、動いている環境の物理状態（関節・胴体の位置と速度、直前の指令）を、結果に応じた方策の環境へ引き継ぎます。3つのクリップは前半が同じなので、カニは今の姿勢のまま続けて反応します（録画の再生ではありません）。
+
 ## 注意
 
 - 動画はシミュレーションの映像です。実機での動作は検証していません。
