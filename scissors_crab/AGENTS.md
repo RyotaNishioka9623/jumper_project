@@ -94,7 +94,7 @@ Blender で振り付け（jumper_rig.blend にキーフレーム）
 | janken_lose | `c0e0b09`〜`1fb58d6` | 済（`1fb58d6`、1500回、収束） | 重み・記録・目は `renders/janken_lose/1fb58d6/`。関節の誤差は平均2.2° |
 | janken_win | `007b26a` | 済（`441c908`、2500回、未収束で std 0.15） | `renders/janken_win/441c908/`。関節の誤差2.5°、転倒なし。**ジャンプは足が5mm浮く程度の「弾み」**。改善版は janken_win_hop |
 | janken_draw | `1fb58d6`（ビクッを削除） | 済（`97f28f8`、1500回、収束） | `renders/janken_draw/97f28f8/`。関節の誤差1.7°。ループのつなぎ目（描画フレーム138→174の1周）は関節0.4°・胴体0.2mmの差で、継ぎ目なく繰り返せる |
-| janken_win_hop | `a81caad` | 未（このあと Colab で `ITERATIONS 4000`） | win のジャンプを学習しやすくした版（83mmまでしゃがむ → 0.13秒で加速しながら踏み切る（QUAD ease-in）→ 0.17秒・33mmの滞空）。janken_win とその学習結果はそのまま残し、両方を比べて採用する方を決める |
+| janken_win_hop | `a81caad` | 済（`5224cc3`、4000回、安定して収束、std 0.07） | `renders/janken_win_hop/5224cc3/`。関節の誤差1.6°（win は2.5°）、試行の失敗なし。弾む幅は47mm（win は30mm）。**足が床から離れるのは3〜4mm程度で、空中に出るジャンプはまだ再現できていない**。公式の jumper.jump は「胴体の上下速度」と「足の接地状態」がお手本と一致することを評価に入れて跳ばせている。janken 系は姿勢の追従しか評価していないので、本当に跳ばせるにはこれらの評価項目を追加する必要がある |
 
 - 学習結果はユーザーのダウンロードフォルダに届く（`~/Downloads/Jumper_lose/`、`~/Downloads/Jumper_win/` など）。
 - **効果音15個はそろった**（`scissors_crab/external/se/`。ファイル名は効果音名の日本語のまま。例：`ハサミでチョキチョキ.mp3`）。
