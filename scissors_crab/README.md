@@ -124,11 +124,11 @@ $B --background --factory-startup scissors_crab/renders/sets/home_set.blend \
     --draw $D/rollout.npz --draw-eyes $D/eyes --human $H \
     --frames 70 480 --render $OUT/win_ending.mp4 --size 1920 1080
 
-# 3b. 同じカットを2秒延ばした後ろの部分（題名を読ませるため。481〜540）
+# 3b. 同じカットの302以降を、2秒延ばして描く（題名を読ませるため。302〜540）
 $B --background --factory-startup scissors_crab/renders/sets/home_set.blend \
     --python scissors_crab/blender/ending.py -- --win $W/rollout.npz --win-eyes $W/eyes \
     --draw $D/rollout.npz --draw-eyes $D/eyes --human $H --length 540 \
-    --frames 481 540 --render $OUT/win_ending_tail.mp4 --size 1920 1080
+    --frames 302 540 --render $OUT/win_ending_rest.mp4 --size 1920 1080
 
 # サムネイル：「ぽん！」直後（124）、拳の後ろからカニの顔を見る1枚
 $B --background --factory-startup scissors_crab/renders/sets/home_set.blend \

@@ -11,17 +11,21 @@ the commands):
 - `lose_ots.mp4`, render frames 1-230: the losing game over the human's shoulder,
 - `lose_close.mp4`, frames 200-338: the same take, the crab's face close up,
 - `win_ending.mp4`, frames 70-480: the winning game (janken_win_jump), then
-  `ending.py`'s camera across the room to the two crabs drawing forever,
-- `win_ending_tail.mp4`, frames 481-540: the same shot two seconds longer
-  (`ending.py --length 540`), for the title to be read.
+  `ending.py`'s camera across the room to the two crabs drawing forever; used up
+  to frame 301,
+- `win_ending_rest.mp4`, frames 302-540: the same shot from there, two seconds
+  longer (`ending.py --length 540`) for the title to be read. Rendered again after
+  the eyes were fixed: past the end of an eye sequence (the winner's 302 frames, the
+  pair's 496) they had rendered magenta.
 
 **The premise is not told; the viewer works it out.** The video opens on the game
-itself -- the fist coming up, "jan, ken" -- not on a title. Scissors against rock,
+itself -- the fist coming up under "じゃんけん…", shown from the first frame -- not on
+a title. Scissors against rock,
 scissors again against paper, then two crabs throwing scissors at each other
 forever: by then the viewer has thought "wait, can it only throw scissors?", and the
-title arrives last, over the endless draw, as the answer. So the only other caption
-is "one more time!", which marks the cut from the close-up back to the game as a
-second round. Every caption is Japanese with an English line under it.
+title arrives last, over the endless draw, as the answer. So the only other captions
+are the first game's call and "one more time!", which marks the cut from the
+close-up back to the game as a second round. Every caption is Japanese with an English line under it.
 
 Every caption and sound is placed at a render frame of the take it belongs to --
 the beats are the choreography's (`motions/janken_common.py`, `make_janken_*.py`,
@@ -45,8 +49,8 @@ TAKES = (
     # what X shows before the video plays. The practice snips before it are cut.
     ("lose_ots", 1, 84, 211),       # up to the head going down
     ("lose_close", 200, 211, 296),  # the crying, up to the lead-out back to HOME
-    ("win_ending", 70, 80, 481),    # from the fist raised for the rematch
-    ("win_ending_tail", 481, 481, 541),
+    ("win_ending", 70, 80, 302),    # from the fist raised for the rematch
+    ("win_ending_rest", 302, 302, 541),
 )
 
 
@@ -68,12 +72,12 @@ def main() -> None:
     def C(f):
         return at("lose_close", f)
 
-    def W(f):  # the tail continues the shot, so its frames are on the same line
+    def W(f):  # the rest continues the shot, so its frames are on the same line
         return at("win_ending", f)
 
-    def cap(text, sub, start, end, pos="top", size=92):
+    def cap(text, sub, start, end, pos="top", size=92, **kw):
         return {"text": text, "sub": sub, "start": start, "end": end, "pos": pos,
-                "size": size}
+                "size": size, **kw}
 
     def snd(name, t, gain=0.8, dur=None):
         s = {"file": SE + name + ".mp3", "at": t, "gain": gain}
@@ -82,6 +86,9 @@ def main() -> None:
         return s
 
     captions = [
+        # The call, from the first frame (no fade in) until pon (120).
+        cap("じゃんけん…", "Rock, paper, scissors...", L(84), L(118), fade_in=False),
+        cap("ぽん！", "Shoot!", L(118), L(138)),
         # The rematch: from the fist raised (88) to just before pon (120).
         cap("もう一回！", "One more time!", W(81), W(116)),
         # The answer, over the pair drawing: their "sho" falls on 306 + 36k, so two

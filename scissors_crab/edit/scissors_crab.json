@@ -19,15 +19,32 @@
   {
    "file": "scissors_crab/renders/final/win_ending.mp4",
    "in": 0.333,
-   "out": 13.7
+   "out": 7.733
   },
   {
-   "file": "scissors_crab/renders/final/win_ending_tail.mp4",
+   "file": "scissors_crab/renders/final/win_ending_rest.mp4",
    "in": 0.0,
-   "out": 2.0
+   "out": 7.967
   }
  ],
  "captions": [
+  {
+   "text": "じゃんけん…",
+   "sub": "Rock, paper, scissors...",
+   "start": 0.0,
+   "end": 1.133,
+   "pos": "top",
+   "size": 92,
+   "fade_in": false
+  },
+  {
+   "text": "ぽん！",
+   "sub": "Shoot!",
+   "start": 1.133,
+   "end": 1.8,
+   "pos": "top",
+   "size": 92
+  },
   {
    "text": "もう一回！",
    "sub": "One more time!",

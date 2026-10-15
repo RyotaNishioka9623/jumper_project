@@ -19,7 +19,9 @@ The edit list:
     }
 
 Clips play one after another; caption and sound times are on that joined timeline,
-in seconds. A sound's optional `dur` cuts it short, with a 0.1 s fade at the cut. Captions are drawn here (white, a dark rounded outline, an optional smaller
+in seconds. A sound's optional `dur` cuts it short, with a 0.1 s fade at the cut; a
+caption's `"fade_in": false` shows it at full strength from its first frame (one on
+the video's first frame, which X shows before it plays). Captions are drawn here (white, a dark rounded outline, an optional smaller
 subtitle line) and overlaid while they are on; a short fade in and out softens them.
 Re-timing captions or sounds needs no re-render of the takes.
 """
@@ -102,7 +104,9 @@ def build(spec: dict, out: Path) -> None:
         for k, cap in enumerate(captions):
             idx = len(clips) + k
             st, en = cap["start"], cap["end"]
-            graph.append(f"[{idx}:v]format=rgba,fade=t=in:st={st}:d={FADE_S}:alpha=1,"
+            fade_in = (f"fade=t=in:st={st}:d={FADE_S}:alpha=1,"
+                       if cap.get("fade_in", True) else "")
+            graph.append(f"[{idx}:v]format=rgba,{fade_in}"
                          f"fade=t=out:st={en - FADE_S}:d={FADE_S}:alpha=1[c{k}]")
             graph.append(f"[{last}][c{k}]overlay=0:0:enable='between(t,{st},{en})'[o{k}]")
             last = f"o{k}"

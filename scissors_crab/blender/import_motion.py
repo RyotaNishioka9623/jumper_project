@@ -127,7 +127,11 @@ def set_eyes(eyes: Path, frames: int, coll: bpy.types.Collection | None = None) 
         node.image = img
         node.image_user.frame_start = 1
         node.image_user.frame_offset = 0
-        node.image_user.frame_duration = max(frames, len(seq))
+        # The sequence's own length, not the motion's: past it a non-cyclic image
+        # user holds the last image, while a longer duration asks for files that do
+        # not exist and renders them magenta (the ending's pair went pink after 496).
+        node.image_user.frame_duration = len(seq)
+        node.image_user.use_cyclic = False
         node.image_user.use_auto_refresh = True
         if len(seq) < frames:
             print(f"warning: {side} eye has {len(seq)} frames for a {frames}-frame motion; "
