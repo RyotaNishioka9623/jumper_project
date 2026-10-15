@@ -23,7 +23,8 @@
 | `scripts/play.py --qpos-out` | （公式スクリプトに追加）再生中の全状態を毎ステップ記録する（`rl/mjrl/viewer/qpos_log.py`） |
 | `scissors_crab/assets/eyes/` | 各表情の静止画（リグの初期表示用） |
 | `tasks/jumper/common/janken.py` | じゃんけんタスクの共通設定。報酬などの数値はクリップから計算する |
-| `tasks/jumper/janken_*/` | 結果ごとのタスク（`janken_lose`、`janken_win`、`janken_draw`） |
+| `tasks/jumper/common/janken_jump.py` | ジャンプの区間だけ評価を変える仕組み（`janken_win_jump` 用） |
+| `tasks/jumper/janken_*/` | 結果ごとのタスク（`janken_lose`、`janken_win`、`janken_win_hop`、`janken_win_jump`、`janken_draw`） |
 | `scissors_crab/motions/` | 振り付けの `.blend`、そこから書き出したキーフレーム表、目の表情のタイムライン（`.eyes.json`） |
 | `scissors_crab/motions/make_janken_*.py` | 結果ごとのたたき台を `.blend` に生成する。前半は `janken_common.py` で共有（以後は `.blend` を直接編集する） |
 | `scissors_crab/docs/` | 評価基準の整理と制作計画 |

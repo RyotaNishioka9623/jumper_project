@@ -76,6 +76,7 @@ Blender で振り付け（jumper_rig.blend にキーフレーム）
 | `motions/janken_common.py` | 共通のポーズと前半、`mirror()`、`hop()`、`set_down()` |
 | `motions/make_janken_{lose,win,draw}.py` | たたき台の生成（以後は `.blend` を直接編集してもよい） |
 | `tasks/jumper/common/janken.py` | 環境設定の数値をクリップから計算 |
+| `tasks/jumper/common/janken_jump.py` | ジャンプの区間を見つけ、その区間だけ電力・トルクの減点を外し、高さ・上下速度・接地状態の評価を足す（janken_win_jump が使う） |
 | `scripts/play.py --qpos-out` | （公式に追加）再生中の全状態を記録（`rl/mjrl/viewer/qpos_log.py`） |
 | `tools/make_eyes.py` | 目の表情の描画、タイムラインから連番画像と 132px の実機用動画 |
 | `blender/import_motion.py` | 動き＋目をリグに載せて描画（`--twin` で鏡写しの2台目、`--frames` で区間指定） |
@@ -85,7 +86,7 @@ Blender で振り付け（jumper_rig.blend にキーフレーム）
 | `colab/scissors_crab_colab.ipynb` | Colab 用ノートブック（公式のコピーで、初期値だけ変更） |
 
 **Colab での学習手順**：ランタイムを接続解除して削除 → ノートブックを開き直す → GPU を選ぶ → `TASK` と `ITERATIONS` を設定 → すべてのセルを実行。`Pinned source commit:` が最新のコミットであることを確認する。
-`ITERATIONS` は lose・draw が1500、win（ジャンプあり）が2500。
+`ITERATIONS` は lose・draw が1500、win が2500、win_hop・win_jump が4000。
 
 ## 5. 現在の状況（2026-10-15）
 
@@ -95,15 +96,17 @@ Blender で振り付け（jumper_rig.blend にキーフレーム）
 | janken_win | `007b26a` | 済（`441c908`、2500回、未収束で std 0.15） | `renders/janken_win/441c908/`。関節の誤差2.5°、転倒なし。**ジャンプは足が5mm浮く程度の「弾み」**。改善版は janken_win_hop |
 | janken_draw | `1fb58d6`（ビクッを削除） | 済（`97f28f8`、1500回、収束） | `renders/janken_draw/97f28f8/`。関節の誤差1.7°。ループのつなぎ目（描画フレーム138→174の1周）は関節0.4°・胴体0.2mmの差で、継ぎ目なく繰り返せる |
 | janken_win_hop | `a81caad` | 済（`5224cc3`、4000回、安定して収束、std 0.07） | `renders/janken_win_hop/5224cc3/`。関節の誤差1.6°（win は2.5°）、試行の失敗なし。弾む幅は47mm（win は30mm）。**足が床から離れるのは3〜4mm程度で、空中に出るジャンプはまだ再現できていない**。公式の jumper.jump は「胴体の上下速度」と「足の接地状態」がお手本と一致することを評価に入れて跳ばせている。janken 系は姿勢の追従しか評価していないので、本当に跳ばせるにはこれらの評価項目を追加する必要がある |
+| janken_win_jump | win_hop と同じクリップ（同じキーフレームから変換、全チャンネル一致） | 未（Colab で4000回） | 跳べなかった原因への対策（案1＋案2）。**ジャンプの区間**（描画ではなく制御のフレームで209〜280、50Hz）だけ：①電力とトルク超過の減点を外す（公式ジャンプのお手本で計算すると踏み切りで1ステップ平均4.7点、最大17点の減点になり、最大の加点6.5点を上回っていた）②公式 jumper.jump と同じ3項目を追加：胴体の高さ（許容幅24.7mm）、上下速度（0.27m/s）、足の接地状態（お手本の空中フレーム229〜237・253〜260）。重みは計6.5（3：2：2.5）。区間の外は win_hop と全く同じ。学習ログの `Episode_Metrics/feet_clearance` が「4本の足が一番高く浮いた高さ（m）」：win_hop の方策は約4mm、お手本は33.6mm |
 
 - 学習結果はユーザーのダウンロードフォルダに届く（`~/Downloads/Jumper_lose/`、`~/Downloads/Jumper_win/` など）。
 - **効果音15個はそろった**（`scissors_crab/external/se/`。ファイル名は効果音名の日本語のまま。例：`ハサミでチョキチョキ.mp3`）。
 - 編集ツール `tools/edit.py` はテロップと効果音を載せられることを確認済み。
 - `stage.py`：人は 0.92m 離れた位置に立ち、「ぽん！」の0.6秒後に手を少し引く（勝ちのカニのハサミと重ならないように）。
 - **締めのカット** `blender/ending.py`（`4a40cf6`）：勝ちのカメラが描画フレーム230〜305で部屋の中を移動し、ベッドの手前（x=-1.35〜-0.75, y=-0.75）であいこを繰り返す2体を映す。勝ちの映像とフレーム190で同じカメラ位置なので、編集で勝ちの映像から切り替えればつながる。
+- 方針（2026-10-15）：動画の勝ちは win_hop で進める。janken_win_jump の学習は並行して行い、本当に跳べたら勝ちと締めのカットだけ差し替える
 - 次の作業：
-  1. win_hop の学習結果の確認（ユーザーが Colab で `ITERATIONS 4000`）。採用する勝ちの版を決める
-  2. 本番解像度での描画（負けの肩越しと泣き顔アップ、勝ち、締め）
+  1. janken_win_jump の学習（ユーザーが Colab で `ITERATIONS 4000`）。`feet_clearance` が数cmになれば成功
+  2. 本番解像度での描画（負けの肩越しと泣き顔アップ、勝ち（win_hop）、締め）
   3. 本番の編集リスト（`scissors_crab/edit/*.json`）
   4. サムネイル
   5. 投稿文（日英）

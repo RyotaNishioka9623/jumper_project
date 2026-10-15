@@ -68,6 +68,7 @@ from .jumper import janken_draw  # noqa: F401,E402
 from .jumper import janken_lose  # noqa: F401,E402
 from .jumper import janken_win  # noqa: F401,E402
 from .jumper import janken_win_hop  # noqa: F401,E402
+from .jumper import janken_win_jump  # noqa: F401,E402
 from .jumper import jump  # noqa: F401,E402
 from .jumper import posture  # noqa: F401,E402
 from .jumper import ref_free_jump  # noqa: F401,E402

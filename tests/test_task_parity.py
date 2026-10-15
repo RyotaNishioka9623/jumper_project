@@ -71,6 +71,7 @@ NOT_LOCOMOTION = {
     "jumper.janken_lose",
     "jumper.janken_win",
     "jumper.janken_win_hop",
+    "jumper.janken_win_jump",
     # Walks on five legs with the left-front arm carried as a claw: 16 driven joints
     # instead of 20, five feet in every per-foot term, symmetry off, and a reward
     # set of its own. Set beside the four it would be measuring a leg count, not a
