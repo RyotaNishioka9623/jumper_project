@@ -13,7 +13,7 @@
 - **締切**：Round 1 は **2026-10-30**。選考は3〜4回あり、早く応募するほど有利。期間は 2026-09-30〜11-30。
 - **投稿要件（海外枠）**：15秒より長い動画を X に投稿する。
   - ハッシュタグ：`#Jumper #CrabRobot #OpenSourceRobot`
-  - メンション：`@KingKong Robotics`。**X 上の正確なハンドル名は未確認なので、投稿前に必ず確認する。**
+  - メンション：`@KingKong Robotics`（表示名）。**X のハンドルは `@KingKongRobo`**（https://x.com/KingKongRobo、2026-10-15 確認：表示名が一致、プロフィールのリンクが kingkong.tech、大会の案内を必須ハッシュタグ付きで投稿）
 - **審査**：視聴者の反応60%＋専門家審査40%。評価軸は外観（Beautiful）・動き（Playful）・技能（Useful）の3つ。どれか1つが突出すれば十分で、複数で優れると加点される。制作過程や失敗の共有も評価対象。
 - **規約**：
   - 作品はオリジナルであること
@@ -111,9 +111,8 @@ Blender で振り付け（jumper_rig.blend にキーフレーム）
 - 注意：学習ログの `feet_clearance` は、ジャンプを含まない試行とも平均されるので小さく出る（win_jump で0.007）。成否は再生して足の形状の最下点で測る
 - 次の作業：
   1. 第3版 `renders/final/scissors_crab.mp4`（22.4秒、1920×1080）をユーザーが確認中。締めのカットは `win_ending.mp4`（〜301）＋`win_ending_rest.mp4`（302〜540）。字幕や効果音を直すときは `edit/make_scissors_crab.py` を編集して再生成（描画は不要、約15秒）
-  2. 投稿文の確認（下書きは `post/x_posts.md`、本投稿247字・返信3本・日本語の引用190字）
-  3. 公式 X アカウントのハンドル名の確認：応募要項には「mention @KingKong Robotics」（表示名）しかない。別記の `@kingkong.robotics` は「.」を含むので X のハンドルではない。ユーザーが X で検索して確かめ、`@HANDLE_TO_CHECK` を置き換える
-  4. パソコン版の X でサムネイルを設定できるか確認（できれば `renders/final/thumbnail.png`）
+  2. 投稿文の確認（下書きは `post/x_posts.md`、本投稿244字・返信3本・日本語の引用190字。メンションは @KingKongRobo）
+  3. パソコン版の X でサムネイルを設定できるか確認（できれば `renders/final/thumbnail.png`）
 
 ## 6. 外部素材（`scissors_crab/external/`、Git の管理対象外）
 

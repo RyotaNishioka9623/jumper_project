@@ -10,7 +10,7 @@
 
 ## 投稿の前に確認すること
 
-1. **公式アカウントのハンドル名**：応募要項には「mention @KingKong Robotics」としか書かれていない（表示名。X のハンドル名は15字以内の英数字と `_`）。X で「KingKong Robotics」を検索し、公式アカウントの `@` の後ろを確かめて、下の `@HANDLE_TO_CHECK` を置き換える。下書きの字数は16字（最大の長さ）で数えてある。
+1. **メンション先は `@KingKongRobo`**（https://x.com/KingKongRobo、2026-10-15 確認）。表示名が応募要項の「@KingKong Robotics」と一致し、プロフィールのリンクが kingkong.tech、Jumper のオープンソース化と大会の案内を必須ハッシュタグ付きで投稿している。公式の投稿は `#KingKong #BeUnlimited` も付けている（応募には不要。付けても267字で収まる）。
 2. **サムネイル**：パソコン版の投稿画面で、動画にサムネイルを設定する項目があるか確かめる。あれば `renders/final/thumbnail.png` を使う。
 3. 動画は `renders/final/scissors_crab.mp4`（22.4秒、1920×1080）。
 
@@ -23,7 +23,7 @@ Our Jumper learned every move in simulation with the open-source toolkit: the th
 
 Watch to the end.
 
-@HANDLE_TO_CHECK #Jumper #CrabRobot #OpenSourceRobot
+@KingKongRobo #Jumper #CrabRobot #OpenSourceRobot
 ```
 
 ## 2. 返信1：作り方
