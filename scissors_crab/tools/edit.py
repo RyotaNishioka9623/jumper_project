@@ -15,7 +15,7 @@ The edit list:
                     "colour": [255, 255, 255]}, ...],
       "sounds": [{"file": "scissors_crab/external/se/パッ.mp3", "at": 1.2, "gain": 0.8,
                   "dur": 0.8}, ...],
-      "fade_out": 1.5
+      "fade_out": 1.5, "gain_db": 6.0
     }
 
 Clips play one after another; caption and sound times are on that joined timeline,
@@ -125,7 +125,10 @@ def build(spec: dict, out: Path) -> None:
                          f"aformat=channel_layouts=stereo,"
                          f"volume={s.get('gain', 1.0)},adelay={ms}|{ms}[a{j}]")
             mix.append(f"[a{j}]")
-        graph.append("".join(mix) + f"amix=inputs={len(mix)}:normalize=0:duration=first[mixed]")
+        graph.append("".join(mix) + f"amix=inputs={len(mix)}:normalize=0:duration=first[mixed0]")
+        # The whole mix up by `gain_db`, a limiter catching where effects overlap.
+        graph.append(f"[mixed0]volume={spec.get('gain_db', 0.0)}dB,"
+                     f"alimiter=limit=0.97:level=0[mixed]")
         if fade:
             graph.append(f"[mixed]afade=t=out:st={duration - fade:.3f}:d={fade}[aout]")
         else:

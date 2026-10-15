@@ -53,7 +53,7 @@ def main() -> None:
     C = lambda f: at("lose_close", f)
     W = lambda f: at("win_ending", f)
 
-    def cap(text, sub, start, end, pos="top", size=64):
+    def cap(text, sub, start, end, pos="top", size=92):
         return {"text": text, "sub": sub, "start": start, "end": end, "pos": pos,
                 "size": size}
 
@@ -67,7 +67,7 @@ def main() -> None:
     # jan 96, ken 108, pon 120 (stage.py's READY..PON).
     captions = [
         cap("チョキしか出せないカニ", "The crab that can only throw scissors", 0.2, L(88),
-            size=76),
+            size=110),
         cap("じゃん", "Rock,", L(94), L(106)),
         cap("けん", "paper,", L(106), L(118)),
         cap("ぽん！", "scissors!", L(118), L(136)),
@@ -92,7 +92,7 @@ def main() -> None:
         cap("Jumper オープンソースで強化学習",
             "Trained in simulation with the Jumper open-source toolkit"
             " · scene: KingKong Robotics jumper-design",
-            W(396), W(480), pos="bottom", size=34),
+            W(396), W(480), pos="bottom", size=48),
     ]
     sounds = [
         snd("キラッ1", L(29), 0.6),
@@ -129,6 +129,8 @@ def main() -> None:
         "captions": captions,
         "sounds": sounds,
         "fade_out": 1.6,
+        # Effects only, mixed at their own levels, peak at -7 dB: up 6 dB.
+        "gain_db": 6.0,
     }
     out = HERE / "scissors_crab.json"
     out.write_text(json.dumps(spec, ensure_ascii=False, indent=1) + "\n")
