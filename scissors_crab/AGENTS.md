@@ -92,8 +92,9 @@ Blender で振り付け（jumper_rig.blend にキーフレーム）
 | タスク | クリップを最後に変えたコミット | 学習 | 状態 |
 |---|---|---|---|
 | janken_lose | `c0e0b09`〜`1fb58d6` | 済（`1fb58d6`、1500回、収束） | 重み・記録・目は `renders/janken_lose/1fb58d6/`。関節の誤差は平均2.2° |
-| janken_win | `007b26a` | 済（`441c908`、2500回、未収束で std 0.15） | `renders/janken_win/441c908/`。関節の誤差2.5°、転倒なし。**ジャンプは足が5mm浮く程度の「弾み」**。跳びやすい形（83mmまでしゃがむ、0.13秒で踏み切り、0.17秒・約3cmの滞空）に作り直して4000回で学習し直すかを、ユーザーに確認中 |
+| janken_win | `007b26a` | 済（`441c908`、2500回、未収束で std 0.15） | `renders/janken_win/441c908/`。関節の誤差2.5°、転倒なし。**ジャンプは足が5mm浮く程度の「弾み」**。改善版は janken_win_hop |
 | janken_draw | `1fb58d6`（ビクッを削除） | 未（ユーザーが Colab で実施中） | 学習結果待ち |
+| janken_win_hop | （作成中のコミット） | 未（このあと Colab で `ITERATIONS 4000`） | win のジャンプを学習しやすくした版（83mmまでしゃがむ → 0.13秒で加速しながら踏み切る（QUAD ease-in）→ 0.17秒・33mmの滞空）。janken_win とその学習結果はそのまま残し、両方を比べて採用する方を決める |
 
 - 学習結果はユーザーのダウンロードフォルダに届く（`~/Downloads/Jumper_lose/`、`~/Downloads/Jumper_win/` など）。
 - **効果音15個はそろった**（`scissors_crab/external/se/`。ファイル名は効果音名の日本語のまま。例：`ハサミでチョキチョキ.mp3`）。
@@ -130,6 +131,8 @@ Blender で振り付け（jumper_rig.blend にキーフレーム）
 - **コミットと push は許可済み**。コミットメッセージの末尾には `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` を付ける。リポジトリは public。
 - **公式テストの既知の失敗**：`tests/test_posture.py::test_the_mirror_of_a_posture_is_the_posture_of_the_mirror` は上流側の数値誤差で失敗する。それ以外の全テストが通ることを確認する。
 - **ruff**：上流のファイルには元から警告がある。自分で追加したファイルは警告ゼロに保つ。
+- **ルートの CLAUDE.md は200行未満に保つ**（公式テスト `test_layout.py` が検査している）。案内は既存の行に追記する。
+- **キーフレームの補間**：`janken_common.key(..., interp="QUAD")` は、そのキーから始まる区間を加速する補間にする（踏み切り用）。設定は各キーフレームに直接書き込む（バックグラウンド実行では Blender の設定値が反映されないため）。
 - **シミュレーションの結果を、実機で検証したとは書かない。**
 - **関節の符号**：
   - 腕（LF/RF）は J1 の符号が左右で同じで、J0・J2・J3・J4 は左右で反転する。脚は全関節が反転する。

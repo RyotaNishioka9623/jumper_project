@@ -50,12 +50,14 @@ def mirror(arm: dict[str, float]) -> dict[str, float]:
 
 #: The middle and rear legs' J1 moved together from LEAN (left by +d, right by -d):
 #: +0.15 sinks to 104 mm, -0.25 rises to 130 mm, on the same four feet.
-def legs_j1(d: float) -> dict[str, float]:
+def legs_j1(d: float, d2: float = 0.0) -> dict[str, float]:
+    """With `d2`, J2 moves too: +0.25/+0.20 crouches to 83 mm on the same four feet."""
     out = {}
     for side, sign in (("L", 1.0), ("R", -1.0)):
         for leg in ("M", "R"):
-            name = f"{side}{leg}_J1_joint"
-            out[name] = LEAN[name] + sign * d
+            for j, delta in ((1, d), (2, d2)):
+                name = f"{side}{leg}_J{j}_joint"
+                out[name] = LEAN[name] + sign * delta
     return out
 
 
@@ -81,13 +83,31 @@ def hop(takeoff: int, landing: int) -> None:
         ROOT.keyframe_insert("location", index=2, frame=f)
 
 
-def key(frame: int, *layers: dict[str, float]) -> None:
+def _fcurve(obj: bpy.types.Object, index: int):
+    act = obj.animation_data.action
+    fcurves = getattr(act, "fcurves", None)
+    if fcurves is None:  # layered actions (Blender 4.4+): the first slot's channel bag
+        fcurves = act.layers[0].strips[0].channelbag(act.slots[0]).fcurves
+    return next(fc for fc in fcurves
+                if fc.data_path == "rotation_euler" and fc.array_index == index)
+
+
+def key(frame: int, *layers: dict[str, float], interp: str = "BEZIER") -> None:
+    """Key the pose at `frame`. `interp` is the interpolation of the segment that starts
+    here: "QUAD" (eased in, i.e. accelerating) for a push-off, BEZIER otherwise. It is
+    set on the keyframe itself: the preference for new keys is not honoured by
+    keyframe_insert in a background run."""
     pose = dict(HOME)
     for layer in layers:
         pose.update(layer)
     for name, obj in J.items():
         obj.rotation_euler[obj["axis"]] = pose[name]
         obj.keyframe_insert("rotation_euler", index=obj["axis"], frame=frame)
+        # Set on every key: a new key takes its neighbour's interpolation otherwise.
+        kp = next(k for k in _fcurve(obj, obj["axis"]).keyframe_points
+                  if abs(k.co.x - frame) < 1e-6)
+        kp.interpolation = interp
+        kp.easing = "EASE_IN" if interp != "BEZIER" else "AUTO"
 
 
 def opening(snips: bool = True) -> int:
