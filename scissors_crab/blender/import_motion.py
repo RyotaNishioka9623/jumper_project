@@ -74,12 +74,22 @@ def resample(dt: float, data: np.ndarray, fps: float) -> np.ndarray:
     return np.stack([np.interp(t_dst, t_src, data[:, c]) for c in range(data.shape[1])], axis=1)
 
 
-def key_motion(base: np.ndarray, joints: np.ndarray, names: list[str]) -> int:
-    rig = {o["joint"]: o for o in bpy.data.objects if "joint" in o}
+def rig_objects(coll: bpy.types.Collection | None = None):
+    """(root, {joint name: object}) of the rig in `coll` -- the scene's first rig
+    (`jumper_rig`) by default. A second rig appended into the same file has its own
+    collection and its objects carry a suffix; the custom `joint` property does not."""
+    coll = coll or bpy.data.collections["jumper_rig"]
+    objs = coll.all_objects
+    root = next(o for o in objs if o.name.startswith("jumper_root"))
+    return root, {o["joint"]: o for o in objs if "joint" in o}
+
+
+def key_motion(base: np.ndarray, joints: np.ndarray, names: list[str],
+               coll: bpy.types.Collection | None = None) -> int:
+    root, rig = rig_objects(coll)
     missing = set(rig) - set(names)
     if missing:
         raise ValueError(f"the motion has no {sorted(missing)}")
-    root = bpy.data.objects["jumper_root"]
     for obj in [root, *rig.values()]:
         obj.animation_data_clear()
     root.rotation_mode = "QUATERNION"
@@ -104,12 +114,14 @@ def key_motion(base: np.ndarray, joints: np.ndarray, names: list[str]) -> int:
     return len(base)
 
 
-def set_eyes(eyes: Path, frames: int) -> None:
+def set_eyes(eyes: Path, frames: int, coll: bpy.types.Collection | None = None) -> None:
+    coll = coll or bpy.data.collections["jumper_rig"]
     for side in ("R", "L"):
         seq = sorted((eyes / side).glob("*.png"))
         if not seq:
             raise ValueError(f"{eyes / side} has no frames; run make_eyes.py")
-        node = bpy.data.materials[f"eye_{side}"].node_tree.nodes["eye_image"]
+        eye = next(o for o in coll.all_objects if o.name.startswith(f"eye_{side}"))
+        node = eye.data.materials[0].node_tree.nodes["eye_image"]
         img = bpy.data.images.load(str(seq[0].resolve()))
         img.source = "SEQUENCE"
         node.image = img
@@ -122,21 +134,25 @@ def set_eyes(eyes: Path, frames: int) -> None:
                   "it holds its last frame")
 
 
-def add_twin(distance: float) -> None:
-    """A second robot `distance` metres ahead, facing back and mirrored left-right.
+def add_twin(distance: float, coll: bpy.types.Collection | None = None,
+             at_x: float = 0.0) -> bpy.types.Object:
+    """A second robot `distance` metres ahead (+X) of the rig in `coll`, which stands at
+    x = `at_x`, facing back and mirrored left-right.
 
     It is an instance of the rig's collection, so it plays the very same motion and
     face, in step. Mirrored (scale y = -1 under a half turn), its right claw stays on
-    the same side of the stage as the first robot's: the two scissors meet."""
+    the same side of the stage as the first robot's: the two scissors meet. The half
+    turn maps x to -x about the origin, hence the 2 * at_x in its offset."""
     import math
 
     twin = bpy.data.objects.new("twin", None)
     twin.instance_type = "COLLECTION"
-    twin.instance_collection = bpy.data.collections["jumper_rig"]
-    twin.location = (distance, 0.0, 0.0)
+    twin.instance_collection = coll or bpy.data.collections["jumper_rig"]
+    twin.location = (2.0 * at_x + distance, 0.0, 0.0)
     twin.rotation_euler = (0.0, 0.0, math.pi)
     twin.scale = (1.0, -1.0, 1.0)
     bpy.context.scene.collection.objects.link(twin)
+    return twin
 
 
 def render(out: Path, size: tuple[int, int]) -> None:
