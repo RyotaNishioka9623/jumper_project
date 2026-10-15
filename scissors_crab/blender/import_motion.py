@@ -172,6 +172,8 @@ def main() -> None:
                     default=(0.62, -0.38, 0.30), help="camera position, metres")
     ap.add_argument("--look-at", type=float, nargs=3, metavar=("X", "Y", "Z"),
                     default=(0.04, -0.02, 0.10))
+    ap.add_argument("--frames", type=int, nargs=2, metavar=("FIRST", "LAST"),
+                    help="render only these frames (1-based, inclusive), e.g. one shot")
     ap.add_argument("--twin", type=float, metavar="METRES",
                     help="add a mirrored second robot this far ahead, facing the first")
     args = ap.parse_args(argv)
@@ -193,6 +195,8 @@ def main() -> None:
         bpy.ops.wm.save_as_mainfile(filepath=str(args.save.resolve()))
         print(f"saved {args.save}")
     if args.render:
+        if args.frames:
+            scene.frame_start, scene.frame_end = args.frames
         render(args.render.resolve(), tuple(args.size))
 
 
