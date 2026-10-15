@@ -115,7 +115,7 @@ def build(spec: dict, out: Path) -> None:
         silence = first_sound + len(sounds)
         mix = [f"[{silence}:a]"]
         for j, s in enumerate(sounds):
-            ms = int(round(s["at"] * 1000))
+            ms = round(s["at"] * 1000)
             graph.append(f"[{first_sound + j}:a]aresample=48000,aformat=channel_layouts=stereo,"
                          f"volume={s.get('gain', 1.0)},adelay={ms}|{ms}[a{j}]")
             mix.append(f"[a{j}]")
