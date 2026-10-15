@@ -94,7 +94,7 @@ Blender で振り付け（jumper_rig.blend にキーフレーム）
 | janken_lose | `c0e0b09`〜`1fb58d6` | 済（`1fb58d6`、1500回、収束） | 重み・記録・目は `renders/janken_lose/1fb58d6/`。関節の誤差は平均2.2° |
 | janken_win | `007b26a` | 済（`441c908`、2500回、未収束で std 0.15） | `renders/janken_win/441c908/`。関節の誤差2.5°、転倒なし。**ジャンプは足が5mm浮く程度の「弾み」**。改善版は janken_win_hop |
 | janken_draw | `1fb58d6`（ビクッを削除） | 未（ユーザーが Colab で実施中） | 学習結果待ち |
-| janken_win_hop | （作成中のコミット） | 未（このあと Colab で `ITERATIONS 4000`） | win のジャンプを学習しやすくした版（83mmまでしゃがむ → 0.13秒で加速しながら踏み切る（QUAD ease-in）→ 0.17秒・33mmの滞空）。janken_win とその学習結果はそのまま残し、両方を比べて採用する方を決める |
+| janken_win_hop | `a81caad` | 未（このあと Colab で `ITERATIONS 4000`） | win のジャンプを学習しやすくした版（83mmまでしゃがむ → 0.13秒で加速しながら踏み切る（QUAD ease-in）→ 0.17秒・33mmの滞空）。janken_win とその学習結果はそのまま残し、両方を比べて採用する方を決める |
 
 - 学習結果はユーザーのダウンロードフォルダに届く（`~/Downloads/Jumper_lose/`、`~/Downloads/Jumper_win/` など）。
 - **効果音15個はそろった**（`scissors_crab/external/se/`。ファイル名は効果音名の日本語のまま。例：`ハサミでチョキチョキ.mp3`）。
