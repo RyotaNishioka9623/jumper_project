@@ -38,9 +38,11 @@ READY, JAN, JAN_UP, KEN, KEN_UP, PON = (f + LEAD for f in (76, 84, 90, 96, 102, 
 #: Where the human stands, facing the crab (-X); and for each beat of the game, how deep
 #: it bends (pose_human.half_crouch) and where its playing hand goes, relative to its
 #: own feet: (toward its playing side, forward, up from the floor).
-HUMAN_AT = (0.8, 0.0)
+HUMAN_AT = (0.92, 0.0)
 UP, DOWN, THROW = ((0.35, (0.08, 0.42, 0.62)), (0.45, (0.08, 0.46, 0.52)),
                    (1.3, (0.08, 0.55, 0.32)))
+#: After the throw the hand draws back a little, out of the way of the crab's reaction.
+DRAWN_BACK = (0.8, (0.08, 0.42, 0.42))
 
 
 def light_set() -> None:
@@ -148,7 +150,9 @@ def human_take(rig: bpy.types.Object, body: bpy.types.Object, throw: str) -> Non
     pose(KEN, DOWN)
     pose(KEN_UP, UP)
     pose(PON, THROW, throw)
-    pose(PON + 200, THROW, throw)
+    pose(PON + 6, THROW, throw)
+    pose(PON + 20, DRAWN_BACK, throw)
+    pose(PON + 300, DRAWN_BACK, throw)
 
 
 def main() -> None:
