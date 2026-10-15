@@ -43,6 +43,53 @@ UP, DOWN, THROW = ((0.35, (0.08, 0.42, 0.62)), (0.45, (0.08, 0.46, 0.52)),
                    (1.3, (0.08, 0.55, 0.32)))
 
 
+def light_set() -> None:
+    """Afternoon in the living room: warm sun slanting in through the window behind the
+    sofa (+Y), a soft cool fill from the room side, and a pale sky for ambient light.
+    Replaces the rig's single grey studio sun."""
+    import math
+
+    old = bpy.data.objects.get("sun")
+    if old is not None:
+        bpy.data.objects.remove(old)
+    scene = bpy.context.scene
+
+    def light(name, kind, energy, colour, rot=None, loc=None, size=None):
+        data = bpy.data.lights.new(name, kind)
+        data.energy, data.color = energy, colour
+        if size is not None:
+            if kind == "SUN":
+                data.angle = size
+            else:
+                data.size = size
+        obj = bpy.data.objects.new(name, data)
+        if rot:
+            obj.rotation_euler = tuple(math.radians(a) for a in rot)
+        if loc:
+            obj.location = loc
+        scene.collection.objects.link(obj)
+        return obj
+
+    # Through the window: from +Y, 35 degrees up, a touch from the side.
+    light("window_sun", "SUN", 2.2, (1.0, 0.9, 0.76), rot=(-55.0, 0.0, 200.0), size=0.08)
+    # Fill from the room, large and soft, slightly cool.
+    fill = light("room_fill", "AREA", 35.0, (0.86, 0.9, 1.0), loc=(1.6, -1.6, 1.6), size=1.5)
+    fill.rotation_euler = (math.radians(55.0), 0.0, math.radians(45.0))
+    if scene.world is None:
+        scene.world = bpy.data.worlds.new("world")
+    scene.world.use_nodes = True
+    bg = scene.world.node_tree.nodes.get("Background")
+    bg.inputs["Color"].default_value = (0.78, 0.82, 0.88, 1.0)
+    bg.inputs["Strength"].default_value = 0.3
+    # Standard keeps the crab's red red; AgX washed it toward salmon.
+    scene.view_settings.view_transform = "Standard"
+    scene.view_settings.look = "None"
+    eevee = scene.eevee
+    for attr, value in (("use_raytracing", True), ("use_shadows", True)):
+        if hasattr(eevee, attr):
+            setattr(eevee, attr, value)
+
+
 def append_human(path: Path) -> tuple[bpy.types.Object, bpy.types.Object]:
     with bpy.data.libraries.load(str(path), link=False) as (src, dst):
         dst.collections = [c for c in src.collections if c.startswith("Body ")]
@@ -130,6 +177,7 @@ def main() -> None:
     scene.frame_start, scene.frame_end = 1, n
     if args.eyes:
         im.set_eyes(args.eyes.resolve(), n)
+    light_set()
     rig, body = append_human(args.human.resolve())
     human_take(rig, body, args.throw)
     hidden = clear_floor([(0.0, 0.0), HUMAN_AT, (HUMAN_AT[0] - 0.4, HUMAN_AT[1])], 0.45)
