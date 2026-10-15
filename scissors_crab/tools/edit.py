@@ -13,12 +13,13 @@ The edit list:
       "captions": [{"text": "チョキしか出せないカニ", "sub": "This crab can only throw scissors",
                     "start": 0.3, "end": 3.0, "pos": "top", "size": 64,
                     "colour": [255, 255, 255]}, ...],
-      "sounds": [{"file": "scissors_crab/external/se/パッ.mp3", "at": 1.2, "gain": 0.8}, ...],
+      "sounds": [{"file": "scissors_crab/external/se/パッ.mp3", "at": 1.2, "gain": 0.8,
+                  "dur": 0.8}, ...],
       "fade_out": 1.5
     }
 
 Clips play one after another; caption and sound times are on that joined timeline,
-in seconds. Captions are drawn here (white, a dark rounded outline, an optional smaller
+in seconds. A sound's optional `dur` cuts it short, with a 0.1 s fade at the cut. Captions are drawn here (white, a dark rounded outline, an optional smaller
 subtitle line) and overlaid while they are on; a short fade in and out softens them.
 Re-timing captions or sounds needs no re-render of the takes.
 """
@@ -116,7 +117,12 @@ def build(spec: dict, out: Path) -> None:
         mix = [f"[{silence}:a]"]
         for j, s in enumerate(sounds):
             ms = round(s["at"] * 1000)
-            graph.append(f"[{first_sound + j}:a]aresample=48000,aformat=channel_layouts=stereo,"
+            cut = ""
+            if s.get("dur"):
+                d = float(s["dur"])
+                cut = f"atrim=end={d},afade=t=out:st={max(d - 0.1, 0.0):.3f}:d=0.1,"
+            graph.append(f"[{first_sound + j}:a]{cut}aresample=48000,"
+                         f"aformat=channel_layouts=stereo,"
                          f"volume={s.get('gain', 1.0)},adelay={ms}|{ms}[a{j}]")
             mix.append(f"[a{j}]")
         graph.append("".join(mix) + f"amix=inputs={len(mix)}:normalize=0:duration=first[mixed]")

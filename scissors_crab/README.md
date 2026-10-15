@@ -94,6 +94,44 @@ blender scissors_crab/blender/jumper_rig.blend --background \
 表情の種類は `neutral`、`blink`、`serious`、`sad`、`surprised`、`happy`、`shy`、`sparkle` です。
 `make_eyes.py --sheet sheet.png` で一覧を確認できます。タイムラインは `{"fps": 30, "keys": [[秒, "表情"], ...]}` 形式で、`neutral` の間は自動でまばたきします。
 
+## 本番の動画を作る
+
+背景・人・照明つきの3カットを 1920×1080 で描画し、テロップと効果音を載せて1本にします。
+背景（`home_set.blend`）と人（`human_female.blend`）、効果音・フォントは `renders/` と `external/` にあり、Git には入れていません。
+
+```bash
+L=scissors_crab/renders/janken_lose/1fb58d6
+W=scissors_crab/renders/janken_win_jump/a1f8d50
+D=scissors_crab/renders/janken_draw/97f28f8
+H=scissors_crab/renders/sets/human_female.blend
+OUT=scissors_crab/renders/final
+B=/Applications/Blender.app/Contents/MacOS/Blender
+
+# 1. 負け：人の肩越し（描画フレーム1〜230）
+$B --background --factory-startup scissors_crab/renders/sets/home_set.blend \
+    --python scissors_crab/blender/stage.py -- $L/rollout.npz --eyes $L/eyes --human $H \
+    --throw rock --frames 1 230 --render $OUT/lose_ots.mp4 --size 1920 1080
+
+# 2. 負け：泣き顔のアップ（200〜338）
+$B --background --factory-startup scissors_crab/renders/sets/home_set.blend \
+    --python scissors_crab/blender/stage.py -- $L/rollout.npz --eyes $L/eyes --human $H \
+    --throw rock --camera 0.55 -0.24 0.22 --look-at 0.03 0.0 0.085 --lens 45 \
+    --frames 200 338 --render $OUT/lose_close.mp4 --size 1920 1080
+
+# 3. 勝ち（win_jump）から締めまでの1カット（70〜480）
+$B --background --factory-startup scissors_crab/renders/sets/home_set.blend \
+    --python scissors_crab/blender/ending.py -- --win $W/rollout.npz --win-eyes $W/eyes \
+    --draw $D/rollout.npz --draw-eyes $D/eyes --human $H \
+    --frames 70 480 --render $OUT/win_ending.mp4 --size 1920 1080
+
+# 4. 編集リストを作り（テロップと効果音の時刻は描画フレームから計算）、1本にする
+.venv/bin/python scissors_crab/edit/make_scissors_crab.py
+.venv/bin/python scissors_crab/tools/edit.py scissors_crab/edit/scissors_crab.json \
+    --out $OUT/scissors_crab.mp4
+```
+
+テロップや効果音のタイミングを変えるときは `edit/make_scissors_crab.py` を直して 4. だけやり直します（描画のやり直しは不要）。
+
 ## 注意
 
 - 動画はシミュレーションの映像です。実機での動作は検証していません。
