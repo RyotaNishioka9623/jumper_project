@@ -169,7 +169,7 @@ def hairline(p: Parts) -> np.ndarray:
     and made it a staircase."""
     head = np.zeros(len(p.co), dtype=bool)
     head[list(p.sets[HEAD])] = True
-    x, y, z = p.co[:, 0], p.co[:, 1], p.co[:, 2]
+    y, z = p.co[:, 1], p.co[:, 2]
     top = z[head].max()
     ear_z = (p.centre(4).z + p.centre(5).z) / 2  # face sets 4 and 5 are the ears
 
