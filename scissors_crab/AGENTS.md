@@ -92,15 +92,17 @@ Blender で振り付け（jumper_rig.blend にキーフレーム）
 | タスク | クリップを最後に変えたコミット | 学習 | 状態 |
 |---|---|---|---|
 | janken_lose | `c0e0b09`〜`1fb58d6` | 済（`1fb58d6`、1500回、収束） | 重み・記録・目は `renders/janken_lose/1fb58d6/`。関節の誤差は平均2.2° |
-| janken_win | `007b26a`（ジャンプと終わり方の修正） | 未（ユーザーが Colab で実施中） | 学習結果待ち |
+| janken_win | `007b26a` | 済（`441c908`、2500回、未収束で std 0.15） | `renders/janken_win/441c908/`。関節の誤差2.5°、転倒なし。**ジャンプは足が5mm浮く程度の「弾み」**。跳びやすい形（83mmまでしゃがむ、0.13秒で踏み切り、0.17秒・約3cmの滞空）に作り直して4000回で学習し直すかを、ユーザーに確認中 |
 | janken_draw | `1fb58d6`（ビクッを削除） | 未（ユーザーが Colab で実施中） | 学習結果待ち |
 
-- 学習結果はユーザーのダウンロードフォルダに届く（例：`~/Downloads/Jumper_lose/jumper-jumper-janken_lose-*/run/model_1499.pt`）。
-- **効果音15個はユーザーが手動でダウンロードする**（サーバーが直リンクを拒否するため。回避はしない）。保存先は `scissors_crab/external/se/`。
+- 学習結果はユーザーのダウンロードフォルダに届く（`~/Downloads/Jumper_lose/`、`~/Downloads/Jumper_win/` など）。
+- **効果音15個はそろった**（`scissors_crab/external/se/`。ファイル名は効果音名の日本語のまま。例：`ハサミでチョキチョキ.mp3`）。
+- 編集ツール `tools/edit.py` はテロップと効果音を載せられることを確認済み。
+- `stage.py`：人は 0.92m 離れた位置に立ち、「ぽん！」の0.6秒後に手を少し引く（勝ちのカニのハサミと重ならないように）。
 - 次の作業：
-  1. win・draw の描画
+  1. draw の描画
   2. 勝ち → カメラ移動 → あいこ2体のループ＆フェードの1カット
-  3. 編集の仕組み（テロップ・効果音・カット割り）
+  3. 本番の編集リスト（`scissors_crab/edit/*.json`）
   4. サムネイル
   5. 投稿文（日英）
   6. 公式 X アカウントのハンドル名の確認
@@ -112,7 +114,7 @@ Blender で振り付け（jumper_rig.blend にキーフレーム）
 | `maps/home.map` | KingKongRobotics/jumper-design `library/maps/home.map` | シーン単体のライセンス表記なし。主催者の素材。出典を明記する |
 | `human-base-meshes/…v1.4.1/human_base_meshes_bundle.blend` | blender.org の Asset Bundles（mirror.blender.org の zip、49MB） | CC0 |
 | `fonts/mplus-rounded-1c/*.ttf` | google/fonts `ofl/mplusrounded1c`（Bold・ExtraBold・Black） | OFL |
-| `se/*.mp3` | 効果音ラボ（ユーザーが手動で取得） | 商用可、クレジット不要、再配布禁止 |
+| `se/*.mp3` | 効果音ラボ（ユーザーが手動で取得済み。ファイル名は日本語の効果音名） | 商用可、クレジット不要、再配布禁止 |
 
 効果音の場面対応：
 
