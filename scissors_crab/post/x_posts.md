@@ -37,10 +37,10 @@ How it was made 🛠️
 Code: https://github.com/RyotaNishioka9623/jumper_project
 ```
 
-## 3. 返信2：面白い失敗（ジャンプ）
+## 3. 返信2：最初は跳べなかった話（ジャンプ）
 
 ```text
-Funny setback: the victory jump never left the floor. Just very enthusiastic squats 😅
+At first, the victory jump never left the floor. Just very enthusiastic squats 😅
 
 The reward only scored the pose, and penalties charged for every watt of a push-off. Lifting those for the jump and rewarding height and foot contact got it airborne. For 0.06 s.
 ```
