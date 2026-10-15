@@ -1,5 +1,8 @@
 # CLAUDE.md
 
+> **This fork:** the Scissors Crab contest project is recorded in
+> [`scissors_crab/AGENTS.md`](scissors_crab/AGENTS.md) — @scissors_crab/AGENTS.md
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 The reference documents are thorough and worth reading rather than rediscovering:

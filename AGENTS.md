@@ -1,5 +1,9 @@
 # AGENTS.md
 
+> **This fork:** the Scissors Crab contest project (records, decisions, status) is in
+> [`scissors_crab/AGENTS.md`](scissors_crab/AGENTS.md). Read it before working on anything under
+> `scissors_crab/` or `tasks/jumper/janken_*`.
+
 The working rules for this repository live in [`CLAUDE.md`](CLAUDE.md) — commands, the
 architecture worth knowing before editing, and the conventions that are not visible from any one
 file. They are not Claude-specific; read that file first whatever agent you are.
