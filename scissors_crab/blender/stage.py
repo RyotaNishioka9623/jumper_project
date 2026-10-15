@@ -1,0 +1,141 @@
+"""Stage a janken take: the set, the crab's recorded motion and face, and the human.
+
+    blender scissors_crab/renders/sets/home_set.blend --background \
+        --python scissors_crab/blender/stage.py -- \
+        scissors_crab/renders/janken_lose/1fb58d6/rollout.npz \
+        --eyes scissors_crab/renders/janken_lose/1fb58d6/eyes \
+        --human scissors_crab/renders/sets/human_male.blend --throw rock \
+        --render take.mp4
+
+The base .blend is the rig on a set (import_scene.py). The crab's motion and eyes are
+put on as import_motion.py does. The human (build_human.py) is appended, crouched in
+front of the crab facing it, and keyed through the game in step with the crab's
+opening: a fist raised as the crab readies, two swings on "jan" and "ken", and on "pon"
+the hand thrown -- `--throw rock` against the losing take, `paper` against the winning
+one. The crab's opening is shared, so the frames below hold for every take.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+import bpy
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import import_motion as im
+import pose_human as ph
+
+#: The crab's opening, in render frames: keyframe frames (janken_common.py) plus the
+#: converter's 0.4 s lead-in (12 frames at 30 fps).
+LEAD = 12
+READY, JAN, JAN_UP, KEN, KEN_UP, PON = (f + LEAD for f in (76, 84, 90, 96, 102, 108))
+
+#: Where the human crouches, facing the crab (-X), and where its playing hand goes,
+#: relative to its own feet: (toward its playing side, forward, up from the floor).
+HUMAN_AT = (0.8, 0.0)
+HAND_UP, HAND_DOWN, HAND_THROW = (0.08, 0.45, 0.42), (0.08, 0.5, 0.33), (0.08, 0.55, 0.28)
+
+
+def append_human(path: Path) -> tuple[bpy.types.Object, bpy.types.Object]:
+    with bpy.data.libraries.load(str(path), link=False) as (src, dst):
+        dst.collections = [c for c in src.collections if c.startswith("Body ")]
+        dst.objects = ["human_rig"]
+    for c in dst.collections:
+        bpy.context.scene.collection.children.link(c)
+    rig = bpy.data.objects["human_rig"]
+    bpy.context.scene.collection.objects.link(rig)
+    body = next(o for o in dst.collections[0].all_objects
+                if o.type == "MESH" and ".eye." not in o.name)
+    return rig, body
+
+
+def clear_floor(points: list[tuple[float, float]], radius: float) -> list[str]:
+    """Hide the set's pieces standing within `radius` of any of `points` (x, y): props
+    the performers would stand in. Returns their names."""
+    from mathutils import Vector
+
+    hidden = []
+    scene = bpy.data.collections.get("scene")
+    for obj in (scene.objects if scene else []):
+        if obj.type != "MESH" or obj.dimensions.x > 1.0 or obj.dimensions.y > 1.0:
+            continue  # floors, walls and furniture stay
+        c = obj.matrix_world @ (sum((Vector(b) for b in obj.bound_box), Vector()) / 8)
+        if any((c.x - x) ** 2 + (c.y - y) ** 2 < radius ** 2 for x, y in points):
+            obj.hide_render = obj.hide_viewport = True
+            hidden.append(obj.name)
+    return hidden
+
+
+def key_pose(rig: bpy.types.Object, frame: int) -> None:
+    for pb in rig.pose.bones:
+        pb.keyframe_insert("rotation_quaternion", frame=frame)
+
+
+def human_take(rig: bpy.types.Object, body: bpy.types.Object, throw: str) -> None:
+    def pose(frame: int, hand_at, shape: str) -> None:
+        ph.crouch(rig, play="L", hand_at=hand_at)
+        ph.hand(rig, "L", shape)
+        key_pose(rig, frame)
+
+    # Ground and place once, on the throwing pose.
+    rig.location = (0, 0, 0)
+    ph.crouch(rig, play="L", hand_at=HAND_THROW)
+    ph.grounded(rig, body)
+    ph.place(rig, *HUMAN_AT, facing_deg=180.0)
+
+    pose(1, HAND_DOWN, "relaxed")
+    pose(READY - 8, HAND_DOWN, "relaxed")
+    pose(READY, HAND_UP, "rock")
+    pose(JAN, HAND_DOWN, "rock")
+    pose(JAN_UP, HAND_UP, "rock")
+    pose(KEN, HAND_DOWN, "rock")
+    pose(KEN_UP, HAND_UP, "rock")
+    pose(PON, HAND_THROW, throw)
+    pose(PON + 200, HAND_THROW, throw)
+
+
+def main() -> None:
+    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    ap = argparse.ArgumentParser()
+    ap.add_argument("motion", type=Path)
+    ap.add_argument("--eyes", type=Path)
+    ap.add_argument("--human", type=Path, required=True, help="build_human.py's .blend")
+    ap.add_argument("--throw", choices=("rock", "paper"), required=True)
+    ap.add_argument("--save", type=Path)
+    ap.add_argument("--render", type=Path)
+    ap.add_argument("--frames", type=int, nargs=2, metavar=("FIRST", "LAST"))
+    ap.add_argument("--size", type=int, nargs=2, default=(1280, 720), metavar=("W", "H"))
+    ap.add_argument("--camera", type=float, nargs=3, default=(0.35, -2.3, 0.62))
+    ap.add_argument("--look-at", type=float, nargs=3, default=(0.35, 0.0, 0.45))
+    ap.add_argument("--lens", type=float, default=35.0, help="focal length, mm")
+    args = ap.parse_args(argv)
+
+    scene = bpy.context.scene
+    fps = scene.render.fps / scene.render.fps_base
+    dt, base, joints, names = im.read_motion(args.motion.resolve())
+    n = im.key_motion(im.resample(dt, base, fps), im.resample(dt, joints, fps), names)
+    scene.frame_start, scene.frame_end = 1, n
+    if args.eyes:
+        im.set_eyes(args.eyes.resolve(), n)
+    rig, body = append_human(args.human.resolve())
+    human_take(rig, body, args.throw)
+    hidden = clear_floor([(0.0, 0.0), HUMAN_AT, (HUMAN_AT[0] - 0.4, HUMAN_AT[1])], 0.45)
+    if hidden:
+        print(f"cleared from the floor: {', '.join(hidden)}")
+    bpy.data.objects["cam"].location = args.camera
+    bpy.data.objects["cam"].data.lens = args.lens
+    bpy.data.objects["cam_target"].location = args.look_at
+    print(f"staged {n} frames: crab from {args.motion.name}, human throws {args.throw}")
+    if args.save:
+        bpy.ops.wm.save_as_mainfile(filepath=str(args.save.resolve()))
+    if args.render:
+        if args.frames:
+            scene.frame_start, scene.frame_end = args.frames
+        im.render(args.render.resolve(), tuple(args.size))
+
+
+if __name__ == "__main__":
+    main()
