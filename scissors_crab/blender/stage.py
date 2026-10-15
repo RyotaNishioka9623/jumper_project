@@ -35,8 +35,8 @@ READY, JAN, JAN_UP, KEN, KEN_UP, PON = (f + LEAD for f in (76, 84, 90, 96, 102, 
 
 #: Where the human crouches, facing the crab (-X), and where its playing hand goes,
 #: relative to its own feet: (toward its playing side, forward, up from the floor).
-HUMAN_AT = (0.8, 0.0)
-HAND_UP, HAND_DOWN, HAND_THROW = (0.08, 0.45, 0.42), (0.08, 0.5, 0.33), (0.08, 0.55, 0.28)
+HUMAN_AT = (0.75, 0.0)
+HAND_UP, HAND_DOWN, HAND_THROW = (0.08, 0.38, 0.45), (0.08, 0.44, 0.36), (0.08, 0.48, 0.32)
 
 
 def append_human(path: Path) -> tuple[bpy.types.Object, bpy.types.Object]:
@@ -109,7 +109,7 @@ def main() -> None:
     ap.add_argument("--frames", type=int, nargs=2, metavar=("FIRST", "LAST"))
     ap.add_argument("--size", type=int, nargs=2, default=(1280, 720), metavar=("W", "H"))
     ap.add_argument("--camera", type=float, nargs=3, default=(0.35, -2.3, 0.62))
-    ap.add_argument("--look-at", type=float, nargs=3, default=(0.35, 0.0, 0.45))
+    ap.add_argument("--look-at", type=float, nargs=3, default=(0.35, 0.0, 0.4))
     ap.add_argument("--lens", type=float, default=35.0, help="focal length, mm")
     args = ap.parse_args(argv)
 

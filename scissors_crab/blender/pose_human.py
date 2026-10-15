@@ -92,7 +92,8 @@ def hand(rig: bpy.types.Object, side: str, shape: str) -> None:
 
 
 def crouch(rig: bpy.types.Object, play: str = "L", hand_at=(0.0, 0.5, 0.26)) -> None:
-    """A deep squat, leaning toward the crab, head down to it; the playing arm (`play`)
+    """A deep, natural squat -- hips down near the heels, knees up and apart, shins leaning
+    forward over flat feet -- leaning toward the crab, head down to it; the playing arm (`play`)
     held out with its wrist at `hand_at` -- (sideways toward its own side, forward, up
     from the floor), metres -- and the other forearm resting on its knee."""
     for pb in rig.pose.bones:
@@ -100,24 +101,24 @@ def crouch(rig: bpy.types.Object, play: str = "L", hand_at=(0.0, 0.5, 0.26)) -> 
         pb.rotation_quaternion = (1, 0, 0, 0)
         pb.location = (0, 0, 0)
     _update()
-    # Legs: thighs forward, knees a little apart; shins back down to the feet; feet flat.
+    # Legs: thighs rising from the hips to the knees, knees apart; shins leaning forward
+    # 40 degrees over flat feet. (Level thighs, the first cut, sat the hips at knee
+    # height -- an air chair.)
     feet = {s: (rig.data.bones[f"foot.{s}"].tail_local - rig.data.bones[f"foot.{s}"].head_local)
             for s in "LR"}
     toes = {s: (rig.data.bones[f"toe.{s}"].tail_local - rig.data.bones[f"toe.{s}"].head_local)
             for s in "LR"}
-    # Knees wide, so the playing arm reaches down between them.
     for s, x in (("L", 1.0), ("R", -1.0)):
-        aim(rig, f"thigh.{s}", (0.45 * x, -0.94, 0.18))
-        aim(rig, f"shin.{s}", (0.04 * x, 0.42, -0.91))
+        aim(rig, f"thigh.{s}", (0.3 * x, -0.88, 0.36))
+        aim(rig, f"shin.{s}", (0.0, 0.64, -0.77))
         aim(rig, f"foot.{s}", feet[s])
         aim(rig, f"toe.{s}", toes[s])
-    # Bent well over toward the crab -- a crouched adult's shoulder is ~0.75 m up and the
-    # arm ~0.5 m to the wrist, so only a deep lean brings the hand down to a crab's
-    # height -- with the head lifted to look at it.
-    aim(rig, "spine", (0.0, -0.75, 0.66))
-    aim(rig, "chest", (0.0, -0.9, 0.44))
-    aim(rig, "neck", (0.0, -0.85, 0.53))
-    aim(rig, "head", (0.0, -0.8, 0.6))
+    # Leaning forward over the knees; with the hips this low the shoulders are ~0.7 m up
+    # and the hand reaches a crab's height without bending over.
+    aim(rig, "spine", (0.0, -0.5, 0.87))
+    aim(rig, "chest", (0.0, -0.6, 0.8))
+    aim(rig, "neck", (0.0, -0.6, 0.8))
+    aim(rig, "head", (0.0, -0.68, 0.73))
     # The playing arm out low in front; the other resting on its knee.
     other = "L" if play == "R" else "R"
     sx = 1.0 if play == "L" else -1.0
