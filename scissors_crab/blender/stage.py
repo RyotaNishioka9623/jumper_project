@@ -115,9 +115,12 @@ def main() -> None:
     ap.add_argument("--render", type=Path)
     ap.add_argument("--frames", type=int, nargs=2, metavar=("FIRST", "LAST"))
     ap.add_argument("--size", type=int, nargs=2, default=(1280, 720), metavar=("W", "H"))
-    ap.add_argument("--camera", type=float, nargs=3, default=(0.45, -3.0, 0.95))
-    ap.add_argument("--look-at", type=float, nargs=3, default=(0.45, 0.0, 0.55))
-    ap.add_argument("--lens", type=float, default=35.0, help="focal length, mm")
+    # Over the human's left shoulder, low: the crab's face to camera, the human's arm and
+    # knee framing it, the human's face out of shot (a still, realistic face reads as
+    # uncanny).
+    ap.add_argument("--camera", type=float, nargs=3, default=(0.85, -0.75, 0.85))
+    ap.add_argument("--look-at", type=float, nargs=3, default=(0.05, -0.04, 0.14))
+    ap.add_argument("--lens", type=float, default=40.0, help="focal length, mm")
     args = ap.parse_args(argv)
 
     scene = bpy.context.scene

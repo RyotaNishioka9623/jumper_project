@@ -354,6 +354,11 @@ def main() -> None:
     for g in body.vertex_groups:
         g.remove(head_only)
     head.add(head_only, 1.0, "REPLACE")
+    # Smooth the base cage after it is posed: its faces read as facets on camera.
+    sub = body.modifiers.new("smooth", "SUBSURF")
+    sub.levels, sub.render_levels = 1, 2
+    for poly in body.data.polygons:
+        poly.use_smooth = True
     used = {g.group for v in body.data.vertices for g in v.groups if g.weight > 0.0}
     empty = [g.name for g in body.vertex_groups if g.index not in used]
     print(f"rig: {len(spec)} bones; bones that got no weights: {empty or 'none'}")
