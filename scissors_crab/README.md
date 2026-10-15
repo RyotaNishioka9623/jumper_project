@@ -96,7 +96,7 @@ blender scissors_crab/blender/jumper_rig.blend --background \
 
 ## 本番の動画を作る
 
-背景・人・照明つきの3カットを 1920×1080 で描画し、テロップと効果音を載せて1本にします。
+背景・人・照明つきのカットを 1920×1080 で描画し、テロップと効果音を載せて1本にします。
 背景（`home_set.blend`）と人（`human_female.blend`）、効果音・フォントは `renders/` と `external/` にあり、Git には入れていません。
 
 ```bash
@@ -123,6 +123,19 @@ $B --background --factory-startup scissors_crab/renders/sets/home_set.blend \
     --python scissors_crab/blender/ending.py -- --win $W/rollout.npz --win-eyes $W/eyes \
     --draw $D/rollout.npz --draw-eyes $D/eyes --human $H \
     --frames 70 480 --render $OUT/win_ending.mp4 --size 1920 1080
+
+# 3b. 同じカットを2秒延ばした後ろの部分（題名を読ませるため。481〜540）
+$B --background --factory-startup scissors_crab/renders/sets/home_set.blend \
+    --python scissors_crab/blender/ending.py -- --win $W/rollout.npz --win-eyes $W/eyes \
+    --draw $D/rollout.npz --draw-eyes $D/eyes --human $H --length 540 \
+    --frames 481 540 --render $OUT/win_ending_tail.mp4 --size 1920 1080
+
+# サムネイル：「ぽん！」直後（124）、拳の後ろからカニの顔を見る1枚
+$B --background --factory-startup scissors_crab/renders/sets/home_set.blend \
+    --python scissors_crab/blender/stage.py -- $L/rollout.npz --eyes $L/eyes --human $H \
+    --throw rock --camera 0.66 -0.44 0.26 --look-at 0.14 -0.07 0.27 --lens 26 \
+    --frames 124 124 --render $OUT/thumbnail.mp4 --size 1920 1080
+ffmpeg -i $OUT/thumbnail.mp4 -frames:v 1 $OUT/thumbnail.png
 
 # 4. 編集リストを作り（テロップと効果音の時刻は描画フレームから計算）、1本にする
 .venv/bin/python scissors_crab/edit/make_scissors_crab.py

@@ -5,19 +5,28 @@
     python scissors_crab/tools/edit.py scissors_crab/edit/scissors_crab.json \
         --out scissors_crab/renders/final/scissors_crab.mp4
 
-Three takes, rendered at 1920x1080 into `scissors_crab/renders/final/` (README.md has
+Four takes, rendered at 1920x1080 into `scissors_crab/renders/final/` (README.md has
 the commands):
 
 - `lose_ots.mp4`, render frames 1-230: the losing game over the human's shoulder,
 - `lose_close.mp4`, frames 200-338: the same take, the crab's face close up,
 - `win_ending.mp4`, frames 70-480: the winning game (janken_win_jump), then
-  `ending.py`'s camera across the room to the two crabs drawing forever.
+  `ending.py`'s camera across the room to the two crabs drawing forever,
+- `win_ending_tail.mp4`, frames 481-540: the same shot two seconds longer
+  (`ending.py --length 540`), for the title to be read.
+
+**The premise is not told; the viewer works it out.** The video opens on the game
+itself -- the fist coming up, "jan, ken" -- not on a title. Scissors against rock,
+scissors again against paper, then two crabs throwing scissors at each other
+forever: by then the viewer has thought "wait, can it only throw scissors?", and the
+title arrives last, over the endless draw, as the answer. So the only other caption
+is "one more time!", which marks the cut from the close-up back to the game as a
+second round. Every caption is Japanese with an English line under it.
 
 Every caption and sound is placed at a render frame of the take it belongs to --
 the beats are the choreography's (`motions/janken_common.py`, `make_janken_*.py`,
 the eye timelines) plus the converter's 12-frame lead-in -- so a cut point can move
-without re-timing anything by hand. Captions are Japanese with an English line under
-them.
+without re-timing anything by hand.
 """
 
 from __future__ import annotations
@@ -30,16 +39,19 @@ FPS = 30
 SE = "scissors_crab/external/se/"
 FINAL = "scissors_crab/renders/final/"
 
-#: (file, first render frame in the file, cut in, cut out) -- frames, inclusive in.
+#: (file, first render frame in the file, cut in, cut out) -- in inclusive, out not.
 TAKES = (
-    ("lose_ots", 1, 1, 211),      # up to the head going down
+    # From the fist coming into frame, 0.4 s before "jan" (96): the first frame is
+    # what X shows before the video plays. The practice snips before it are cut.
+    ("lose_ots", 1, 84, 211),       # up to the head going down
     ("lose_close", 200, 211, 296),  # the crying, up to the lead-out back to HOME
-    ("win_ending", 70, 80, 480),  # from the fist raised for the rematch
+    ("win_ending", 70, 80, 481),    # from the fist raised for the rematch
+    ("win_ending_tail", 481, 481, 541),
 )
 
 
 def timeline():
-    """Output time of render frame `f` in take `name`."""
+    """Output time of render frame `f` in take `name`, and the total length."""
     starts, t = {}, 0.0
     for name, _, cin, cout in TAKES:
         starts[name] = t - cin / FPS
@@ -49,9 +61,15 @@ def timeline():
 
 def main() -> None:
     at, duration = timeline()
-    L = lambda f: at("lose_ots", f)
-    C = lambda f: at("lose_close", f)
-    W = lambda f: at("win_ending", f)
+
+    def L(f):
+        return at("lose_ots", f)
+
+    def C(f):
+        return at("lose_close", f)
+
+    def W(f):  # the tail continues the shot, so its frames are on the same line
+        return at("win_ending", f)
 
     def cap(text, sub, start, end, pos="top", size=92):
         return {"text": text, "sub": sub, "start": start, "end": end, "pos": pos,
@@ -63,40 +81,23 @@ def main() -> None:
             s["dur"] = dur
         return s
 
-    # The shared opening, in render frames: sparkle eyes 30, snips 47-74,
-    # jan 96, ken 108, pon 120 (stage.py's READY..PON).
     captions = [
-        cap("チョキしか出せないカニ", "The crab that can only throw scissors", 0.2, L(88),
-            size=110),
-        cap("じゃん", "Rock,", L(94), L(106)),
-        cap("けん", "paper,", L(106), L(118)),
-        cap("ぽん！", "scissors!", L(118), L(136)),
-        # Lose: flinch 128, blank stare, head down from 199.
-        cap("グーには勝てない…", "Scissors lose to rock...", L(142), L(204)),
-        # Close up: claws down, crying from 221 (eyes), sobs to 294.
-        cap("チョキしか出せないから…", "...because it can only throw scissors", C(224),
-            C(292), pos="bottom"),
-        # Win: rematch from the fist raised (88), pon 120, claw up 128, hops at 140
-        # and 155 (the replay's take-offs), snip 168, remembers 176, hides 186, peeks
-        # 210, hides 222; the camera leaves at 230 and reaches the pair at 305.
+        # The rematch: from the fist raised (88) to just before pon (120).
         cap("もう一回！", "One more time!", W(81), W(116)),
-        cap("勝った！", "I won!", W(127), W(165)),
-        cap("…はっ", "...oh", W(176), W(196)),
-        cap("はずかしい…", "so embarrassing...", W(197), W(238)),
-        cap("いっぽう、カニどうしだと…", "Meanwhile, crab vs. crab...", W(262), W(304)),
-        # The pair's "aiko de sho": each cycle 36 frames, "sho" on scissors at 306+36k.
-        cap("あいこでしょ！", "Draw! Again!", W(318), W(344)),
-        cap("あいこでしょ！", "Draw! Again!", W(354), W(380)),
-        cap("あいこでしょ！", "Draw! Again!", W(390), W(416)),
-        cap("（おわらない）", "(forever)", W(424), W(480)),
+        # The answer, over the pair drawing: their "sho" falls on 306 + 36k, so two
+        # and a half rounds play before it, and it holds to the end.
+        cap("チョキしか出せないカニ", "The crab that can only throw scissors", W(386),
+            duration, size=110),
         cap("Jumper オープンソースで強化学習",
             "Trained in simulation with the Jumper open-source toolkit"
             " · scene: KingKong Robotics jumper-design",
-            W(396), W(480), pos="bottom", size=48),
+            W(400), duration, pos="bottom", size=58),
     ]
+    # Lose: jan 96, ken 108, pon 120, flinch 128, head down from 199; crying from
+    # 221 (eyes), sobs to 294. Win: pon 120, hops at 140 and 155 (the replay's
+    # take-offs), sparkle 161, snip 168, remembers 176, hides 186, peeks 210; the
+    # camera leaves at 230 and reaches the pair at 305.
     sounds = [
-        snd("キラッ1", L(29), 0.6),
-        snd("ハサミでチョキチョキ", L(45), 0.6, dur=1.1),
         snd("パッ", L(95), 0.6, dur=0.4),
         snd("パッ", L(107), 0.6, dur=0.4),
         snd("ジャン！", L(119), 0.8, dur=1.2),
@@ -118,6 +119,7 @@ def main() -> None:
         snd("パッ", W(306), 0.35, dur=0.3),
         snd("パッ", W(342), 0.35, dur=0.3),
         snd("パッ", W(378), 0.35, dur=0.3),
+        snd("キラッ1", W(386), 0.6),
         snd("ちゃんちゃん♪1", round(duration - 1.75, 3), 0.9),
     ]
     spec = {

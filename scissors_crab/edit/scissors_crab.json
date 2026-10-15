@@ -8,7 +8,7 @@
  "clips": [
   {
    "file": "scissors_crab/renders/final/lose_ots.mp4",
-   "in": 0.0,
+   "in": 2.767,
    "out": 7.0
   },
   {
@@ -19,271 +19,166 @@
   {
    "file": "scissors_crab/renders/final/win_ending.mp4",
    "in": 0.333,
-   "out": 13.667
+   "out": 13.7
+  },
+  {
+   "file": "scissors_crab/renders/final/win_ending_tail.mp4",
+   "in": 0.0,
+   "out": 2.0
   }
  ],
  "captions": [
   {
+   "text": "もう一回！",
+   "sub": "One more time!",
+   "start": 7.1,
+   "end": 8.267,
+   "pos": "top",
+   "size": 92
+  },
+  {
    "text": "チョキしか出せないカニ",
    "sub": "The crab that can only throw scissors",
-   "start": 0.2,
-   "end": 2.9,
+   "start": 17.267,
+   "end": 22.433,
    "pos": "top",
    "size": 110
   },
   {
-   "text": "じゃん",
-   "sub": "Rock,",
-   "start": 3.1,
-   "end": 3.5,
-   "pos": "top",
-   "size": 92
-  },
-  {
-   "text": "けん",
-   "sub": "paper,",
-   "start": 3.5,
-   "end": 3.9,
-   "pos": "top",
-   "size": 92
-  },
-  {
-   "text": "ぽん！",
-   "sub": "scissors!",
-   "start": 3.9,
-   "end": 4.5,
-   "pos": "top",
-   "size": 92
-  },
-  {
-   "text": "グーには勝てない…",
-   "sub": "Scissors lose to rock...",
-   "start": 4.7,
-   "end": 6.767,
-   "pos": "top",
-   "size": 92
-  },
-  {
-   "text": "チョキしか出せないから…",
-   "sub": "...because it can only throw scissors",
-   "start": 7.433,
-   "end": 9.7,
-   "pos": "bottom",
-   "size": 92
-  },
-  {
-   "text": "もう一回！",
-   "sub": "One more time!",
-   "start": 9.867,
-   "end": 11.033,
-   "pos": "top",
-   "size": 92
-  },
-  {
-   "text": "勝った！",
-   "sub": "I won!",
-   "start": 11.4,
-   "end": 12.667,
-   "pos": "top",
-   "size": 92
-  },
-  {
-   "text": "…はっ",
-   "sub": "...oh",
-   "start": 13.033,
-   "end": 13.7,
-   "pos": "top",
-   "size": 92
-  },
-  {
-   "text": "はずかしい…",
-   "sub": "so embarrassing...",
-   "start": 13.733,
-   "end": 15.1,
-   "pos": "top",
-   "size": 92
-  },
-  {
-   "text": "いっぽう、カニどうしだと…",
-   "sub": "Meanwhile, crab vs. crab...",
-   "start": 15.9,
-   "end": 17.3,
-   "pos": "top",
-   "size": 92
-  },
-  {
-   "text": "あいこでしょ！",
-   "sub": "Draw! Again!",
-   "start": 17.767,
-   "end": 18.633,
-   "pos": "top",
-   "size": 92
-  },
-  {
-   "text": "あいこでしょ！",
-   "sub": "Draw! Again!",
-   "start": 18.967,
-   "end": 19.833,
-   "pos": "top",
-   "size": 92
-  },
-  {
-   "text": "あいこでしょ！",
-   "sub": "Draw! Again!",
-   "start": 20.167,
-   "end": 21.033,
-   "pos": "top",
-   "size": 92
-  },
-  {
-   "text": "（おわらない）",
-   "sub": "(forever)",
-   "start": 21.3,
-   "end": 23.167,
-   "pos": "top",
-   "size": 92
-  },
-  {
    "text": "Jumper オープンソースで強化学習",
    "sub": "Trained in simulation with the Jumper open-source toolkit · scene: KingKong Robotics jumper-design",
-   "start": 20.367,
-   "end": 23.167,
+   "start": 17.733,
+   "end": 22.433,
    "pos": "bottom",
-   "size": 48
+   "size": 58
   }
  ],
  "sounds": [
   {
-   "file": "scissors_crab/external/se/キラッ1.mp3",
-   "at": 0.933,
-   "gain": 0.6
-  },
-  {
-   "file": "scissors_crab/external/se/ハサミでチョキチョキ.mp3",
-   "at": 1.467,
-   "gain": 0.6,
-   "dur": 1.1
-  },
-  {
    "file": "scissors_crab/external/se/パッ.mp3",
-   "at": 3.133,
+   "at": 0.367,
    "gain": 0.6,
    "dur": 0.4
   },
   {
    "file": "scissors_crab/external/se/パッ.mp3",
-   "at": 3.533,
+   "at": 0.767,
    "gain": 0.6,
    "dur": 0.4
   },
   {
    "file": "scissors_crab/external/se/ジャン！.mp3",
-   "at": 3.933,
+   "at": 1.167,
    "gain": 0.8,
    "dur": 1.2
   },
   {
    "file": "scissors_crab/external/se/ショック2.mp3",
-   "at": 4.2,
+   "at": 1.433,
    "gain": 0.7,
    "dur": 1.8
   },
   {
    "file": "scissors_crab/external/se/しょげる.mp3",
-   "at": 6.567,
+   "at": 3.8,
    "gain": 0.8
   },
   {
    "file": "scissors_crab/external/se/涙のしずく.mp3",
-   "at": 7.333,
+   "at": 4.567,
    "gain": 0.8
   },
   {
    "file": "scissors_crab/external/se/チーン1.mp3",
-   "at": 9.433,
+   "at": 6.667,
    "gain": 0.7,
    "dur": 1.2
   },
   {
    "file": "scissors_crab/external/se/パッ.mp3",
-   "at": 10.333,
+   "at": 7.567,
    "gain": 0.6,
    "dur": 0.4
   },
   {
    "file": "scissors_crab/external/se/パッ.mp3",
-   "at": 10.733,
+   "at": 7.967,
    "gain": 0.6,
    "dur": 0.4
   },
   {
    "file": "scissors_crab/external/se/ジャン！.mp3",
-   "at": 11.133,
+   "at": 8.367,
    "gain": 0.8,
    "dur": 1.0
   },
   {
    "file": "scissors_crab/external/se/ジャンプ.mp3",
-   "at": 11.8,
+   "at": 9.033,
    "gain": 0.8
   },
   {
    "file": "scissors_crab/external/se/ジャンプ.mp3",
-   "at": 12.3,
+   "at": 9.533,
    "gain": 0.8
   },
   {
    "file": "scissors_crab/external/se/可愛く輝く1.mp3",
-   "at": 12.533,
+   "at": 9.767,
    "gain": 0.6
   },
   {
    "file": "scissors_crab/external/se/ハサミでチョキチョキ.mp3",
-   "at": 12.7,
+   "at": 9.933,
    "gain": 0.5,
    "dur": 0.6
   },
   {
    "file": "scissors_crab/external/se/驚く.mp3",
-   "at": 13.0,
+   "at": 10.233,
    "gain": 0.7
   },
   {
    "file": "scissors_crab/external/se/心臓の鼓動2.mp3",
-   "at": 13.367,
+   "at": 10.6,
    "gain": 0.8
   },
   {
    "file": "scissors_crab/external/se/目をパチパチ.mp3",
-   "at": 14.133,
+   "at": 11.367,
    "gain": 0.6
   },
   {
    "file": "scissors_crab/external/se/シーン切り替え2.mp3",
-   "at": 14.867,
+   "at": 12.1,
    "gain": 0.4
   },
   {
    "file": "scissors_crab/external/se/パッ.mp3",
-   "at": 17.367,
+   "at": 14.6,
    "gain": 0.35,
    "dur": 0.3
   },
   {
    "file": "scissors_crab/external/se/パッ.mp3",
-   "at": 18.567,
+   "at": 15.8,
    "gain": 0.35,
    "dur": 0.3
   },
   {
    "file": "scissors_crab/external/se/パッ.mp3",
-   "at": 19.767,
+   "at": 17.0,
    "gain": 0.35,
    "dur": 0.3
+  },
+  {
+   "file": "scissors_crab/external/se/キラッ1.mp3",
+   "at": 17.267,
+   "gain": 0.6
   },
   {
    "file": "scissors_crab/external/se/ちゃんちゃん♪1.mp3",
-   "at": 21.417,
+   "at": 20.683,
    "gain": 0.9
   }
  ],
