@@ -10,9 +10,11 @@
 The base .blend is the rig on a set (import_scene.py). The crab's motion and eyes are
 put on as import_motion.py does. The human (build_human.py) is appended, crouched in
 front of the crab facing it, and keyed through the game in step with the crab's
-opening: a fist raised as the crab readies, two swings on "jan" and "ken", and on "pon"
-the hand thrown -- `--throw rock` against the losing take, `paper` against the winning
-one. The crab's opening is shared, so the frames below hold for every take.
+opening: half crouched with its hands on its knees, peering at the crab while it
+practises; a fist raised as the crab readies, two swings on "jan" and "ken", and on
+"pon" a dip and the hand thrown -- `--throw rock` against the losing take, `paper`
+against the winning one. The crab's opening is shared, so the frames below hold for
+every take.
 """
 
 from __future__ import annotations
@@ -33,10 +35,12 @@ import pose_human as ph
 LEAD = 12
 READY, JAN, JAN_UP, KEN, KEN_UP, PON = (f + LEAD for f in (76, 84, 90, 96, 102, 108))
 
-#: Where the human crouches, facing the crab (-X), and where its playing hand goes,
-#: relative to its own feet: (toward its playing side, forward, up from the floor).
-HUMAN_AT = (0.75, 0.0)
-HAND_UP, HAND_DOWN, HAND_THROW = (0.08, 0.38, 0.45), (0.08, 0.44, 0.36), (0.08, 0.48, 0.32)
+#: Where the human stands, facing the crab (-X); and for each beat of the game, how deep
+#: it bends (pose_human.half_crouch) and where its playing hand goes, relative to its
+#: own feet: (toward its playing side, forward, up from the floor).
+HUMAN_AT = (0.8, 0.0)
+UP, DOWN, THROW = ((0.35, (0.08, 0.42, 0.62)), (0.45, (0.08, 0.46, 0.52)),
+                   (1.3, (0.08, 0.55, 0.32)))
 
 
 def append_human(path: Path) -> tuple[bpy.types.Object, bpy.types.Object]:
@@ -75,26 +79,29 @@ def key_pose(rig: bpy.types.Object, frame: int) -> None:
 
 
 def human_take(rig: bpy.types.Object, body: bpy.types.Object, throw: str) -> None:
-    def pose(frame: int, hand_at, shape: str) -> None:
-        ph.crouch(rig, play="L", hand_at=hand_at)
-        ph.hand(rig, "L", shape)
-        key_pose(rig, frame)
-
-    # Ground and place once, on the throwing pose.
-    rig.location = (0, 0, 0)
-    ph.crouch(rig, play="L", hand_at=HAND_THROW)
-    ph.grounded(rig, body)
     ph.place(rig, *HUMAN_AT, facing_deg=180.0)
 
-    pose(1, HAND_DOWN, "relaxed")
-    pose(READY - 8, HAND_DOWN, "relaxed")
-    pose(READY, HAND_UP, "rock")
-    pose(JAN, HAND_DOWN, "rock")
-    pose(JAN_UP, HAND_UP, "rock")
-    pose(KEN, HAND_DOWN, "rock")
-    pose(KEN_UP, HAND_UP, "rock")
-    pose(PON, HAND_THROW, throw)
-    pose(PON + 200, HAND_THROW, throw)
+    def pose(frame: int, beat=None, shape: str = "rock") -> None:
+        if beat is None:
+            ph.half_crouch(rig)  # hands on knees, peering
+        else:
+            bend, hand_at = beat
+            ph.half_crouch(rig, bend=bend, play="L", hand_at=hand_at, shape=shape)
+        # Each pose bends the legs differently: set the feet on the floor per key.
+        rig.location.z = 0.0
+        ph.grounded(rig, body)
+        key_pose(rig, frame)
+        rig.keyframe_insert("location", index=2, frame=frame)
+
+    pose(1)
+    pose(READY - 10)
+    pose(READY, UP)
+    pose(JAN, DOWN)
+    pose(JAN_UP, UP)
+    pose(KEN, DOWN)
+    pose(KEN_UP, UP)
+    pose(PON, THROW, throw)
+    pose(PON + 200, THROW, throw)
 
 
 def main() -> None:
@@ -108,8 +115,8 @@ def main() -> None:
     ap.add_argument("--render", type=Path)
     ap.add_argument("--frames", type=int, nargs=2, metavar=("FIRST", "LAST"))
     ap.add_argument("--size", type=int, nargs=2, default=(1280, 720), metavar=("W", "H"))
-    ap.add_argument("--camera", type=float, nargs=3, default=(0.35, -2.3, 0.62))
-    ap.add_argument("--look-at", type=float, nargs=3, default=(0.35, 0.0, 0.4))
+    ap.add_argument("--camera", type=float, nargs=3, default=(0.45, -3.0, 0.95))
+    ap.add_argument("--look-at", type=float, nargs=3, default=(0.45, 0.0, 0.55))
     ap.add_argument("--lens", type=float, default=35.0, help="focal length, mm")
     args = ap.parse_args(argv)
 

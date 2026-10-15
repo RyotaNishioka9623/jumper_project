@@ -47,10 +47,14 @@ FINGERS = {
 }
 
 SKIN = (0.80, 0.60, 0.48, 1.0)
-SHIRT = (0.93, 0.93, 0.90, 1.0)
-TROUSERS = (0.20, 0.27, 0.40, 1.0)
-SHOES = (0.12, 0.12, 0.13, 1.0)
 HAIR = (0.10, 0.08, 0.07, 1.0)
+#: Outfit per body: shirt, trousers, socks.
+OUTFITS = {
+    "male": ((0.93, 0.93, 0.90, 1.0), (0.20, 0.27, 0.40, 1.0), (0.12, 0.12, 0.13, 1.0)),
+    # Soft colours, kept clear of the skin tone: a butter-yellow top, light denim, white
+    # socks. (A coral top read as bare skin.)
+    "female": ((0.98, 0.86, 0.52, 1.0), (0.52, 0.62, 0.78, 1.0), (0.93, 0.93, 0.91, 1.0)),
+}
 
 
 def append_body(bundle: Path, body: str) -> bpy.types.Object:
@@ -61,10 +65,13 @@ def append_body(bundle: Path, body: str) -> bpy.types.Object:
     obj = bpy.data.objects[BODY[body]]
     for m in list(obj.modifiers):
         obj.modifiers.remove(m)  # the multires sculpt levels: the base cage is enough here
-    # Centre it on X; it faces -Y, Z up, feet at 0.
+    # Centre it on X; it faces -Y, Z up, feet at 0. Only the roots move: the eyes are
+    # the body's children and would move twice.
     shift = Vector((-obj.location.x, 0.0, 0.0))
     for o in coll.all_objects:
-        o.location += shift
+        if o.parent is None:
+            o.location += shift
+    bpy.context.view_layer.update()
     return obj
 
 
@@ -162,7 +169,7 @@ def build_rig(spec: dict[str, tuple[Vector, Vector, str | None]]) -> bpy.types.O
     return rig
 
 
-def hairline(p: Parts) -> np.ndarray:
+def hairline(p: Parts, long_back: bool = False) -> np.ndarray:
     """Per vertex, 0..1, how much is hair: the crown, above the ears, and the back down to
     the nape, each edge blended over ~1.5 cm. A per-vertex value mixed in the shader
     gives a smooth hairline; per-face materials followed the base mesh's coarse faces
@@ -178,11 +185,13 @@ def hairline(p: Parts) -> np.ndarray:
 
     crown = ramp(z - (top - 0.055), 0.015)
     sides = np.minimum(ramp(y + 0.035, 0.015), ramp(z - (ear_z + 0.01), 0.015))
-    back = np.minimum(ramp(y - 0.04, 0.015), ramp(z - (ear_z - 0.07), 0.02))
+    # Long hair at the back reaches the nape.
+    back = np.minimum(ramp(y - 0.04, 0.015), ramp(z - (ear_z - (0.12 if long_back else 0.07)),
+                                                    0.02))
     return np.where(head, np.maximum.reduce([crown, sides, back]), 0.0)
 
 
-def dress(obj: bpy.types.Object, p: Parts) -> None:
+def dress(obj: bpy.types.Object, p: Parts, outfit, long_back: bool = False) -> None:
     def mat(name: str, rgba) -> bpy.types.Material:
         m = bpy.data.materials.new(f"human_{name}")
         m.use_nodes = True
@@ -193,12 +202,12 @@ def dress(obj: bpy.types.Object, p: Parts) -> None:
         return m
 
     obj.data.materials.clear()
-    names = ["skin", "shirt", "trousers", "shoes"]
-    for n, c in zip(names, (SKIN, SHIRT, TROUSERS, SHOES)):
+    names = ["skin", "shirt", "trousers", "shoes", "hair"]
+    for n, c in zip(names, (SKIN, *outfit, HAIR)):
         obj.data.materials.append(mat(n, c))
     # Skin mixes to hair by the per-vertex `hair` attribute.
     attr = obj.data.color_attributes.new("hair", "FLOAT_COLOR", "POINT")
-    for i, h in enumerate(hairline(p)):
+    for i, h in enumerate(hairline(p, long_back)):
         attr.data[i].color = (h, h, h, 1.0)
     skin = obj.data.materials[0]
     nt = skin.node_tree
@@ -224,6 +233,93 @@ def dress(obj: bpy.types.Object, p: Parts) -> None:
                                3 if f in shoes else 0)
 
 
+def ponytail(p: Parts) -> bpy.types.Object:
+    """A ponytail from the back of the head, falling back and down, as one mesh."""
+    head = p.co[np.array(list(p.sets[HEAD]))]
+    ear_z = (p.centre(4).z + p.centre(5).z) / 2
+    back_y = head[head[:, 2] > ear_z][:, 1].max()
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=16,
+                                         location=(0.0, back_y + 0.016, ear_z - 0.015))
+    tail = bpy.context.active_object
+    tail.scale = (0.032, 0.03, 0.085)
+    tail.rotation_euler.x = np.radians(-25.0)
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+    for poly in tail.data.polygons:
+        poly.use_smooth = True
+    # The tie, where it leaves the head.
+    bpy.ops.mesh.primitive_torus_add(major_radius=0.016, minor_radius=0.006,
+                                     location=(0.0, back_y + 0.002, ear_z + 0.03))
+    tie = bpy.context.active_object
+    tie.rotation_euler.x = np.radians(75.0)
+    bpy.ops.object.select_all(action="DESELECT")
+    tail.select_set(True)
+    tie.select_set(True)
+    bpy.context.view_layer.objects.active = tail
+    bpy.ops.object.join()
+    return tail
+
+
+def eye_shader(mat: bpy.types.Material) -> None:
+    """Sclera, a brown iris and a black pupil, from the per-vertex `iris` value."""
+    mat.use_nodes = True
+    nt = mat.node_tree
+    bsdf = nt.nodes["Principled BSDF"]
+    bsdf.inputs["Roughness"].default_value = 0.15
+    a = nt.nodes.new("ShaderNodeAttribute")
+    a.attribute_name = "iris"
+    ramp = nt.nodes.new("ShaderNodeValToRGB")
+    els = ramp.color_ramp.elements
+    els[0].position, els[0].color = 0.0, (0.92, 0.91, 0.88, 1.0)
+    els[1].position, els[1].color = 1.0, (0.02, 0.015, 0.01, 1.0)
+    for pos, col in ((0.40, (0.92, 0.91, 0.88, 1.0)), (0.45, (0.20, 0.11, 0.05, 1.0)),
+                     (0.80, (0.30, 0.17, 0.08, 1.0)), (0.86, (0.02, 0.015, 0.01, 1.0))):
+        e = els.new(pos)
+        e.color = col
+    nt.links.new(a.outputs["Fac"], ramp.inputs["Fac"])
+    nt.links.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
+    mat.diffuse_color = (0.92, 0.91, 0.88, 1.0)
+
+
+def mark_irises(body: bpy.types.Object, eyes: list[range]) -> None:
+    """Per eye vertex, by its angle from the eyeball's forward axis (-Y, at rest): 0 for
+    the sclera, ~0.6 across the iris (28 degrees), 1 at the pupil (11 degrees)."""
+    if "iris" not in body.data.color_attributes:
+        body.data.color_attributes.new("iris", "FLOAT_COLOR", "POINT")
+    attr = body.data.color_attributes["iris"]
+    co = np.array([v.co for v in body.data.vertices])
+    for r in eyes:
+        idx = np.array(list(r))
+        c = co[idx].mean(axis=0)
+        d = co[idx] - c
+        d /= np.linalg.norm(d, axis=1, keepdims=True)
+        ang = np.degrees(np.arccos(np.clip(-d[:, 1], -1.0, 1.0)))
+        val = np.where(ang < 11.0, 1.0, np.where(ang < 28.0, 0.62, 0.0))
+        for i, v in zip(idx, val):
+            attr.data[i].color = (v, v, v, 1.0)
+
+
+def attach_to_head(body: bpy.types.Object, parts: list[bpy.types.Object],
+                   material: bpy.types.Material) -> range:
+    """Join `parts` into the body, all in `material`, and return their vertex range, to be
+    weighted fully to the head after the automatic weights. (Bone-parented objects
+    drifted off the head in some poses; vertices weighted to the bone cannot.) The
+    material is given as the datablock, not a slot index: a join appends the parts'
+    own slots and shifts indices under anything counted before it."""
+    start = len(body.data.vertices)
+    for obj in parts:
+        obj.data.materials.clear()
+        obj.data.materials.append(material)
+        for poly in obj.data.polygons:
+            poly.material_index = 0
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in parts:
+        obj.select_set(True)
+    body.select_set(True)
+    bpy.context.view_layer.objects.active = body
+    bpy.ops.object.join()
+    return range(start, len(body.data.vertices))
+
+
 def main() -> None:
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     ap = argparse.ArgumentParser()
@@ -237,19 +333,29 @@ def main() -> None:
     parts = Parts(body)
     spec = joints(parts)
     rig = build_rig(spec)
-    dress(body, parts)
+    dress(body, parts, OUTFITS[args.body], long_back=args.body == "female")
+    eyes = [o for o in body.users_collection[0].all_objects if ".eye." in o.name]
+    eye_mat = bpy.data.materials.new("human_eye")
+    eye_shader(eye_mat)
+    body.data.materials.append(eye_mat)
+    eye_ranges = [attach_to_head(body, [eye], eye_mat) for eye in eyes]
+    mark_irises(body, eye_ranges)
+    head_only = [i for r in eye_ranges for i in r]
+    if args.body == "female":
+        head_only += list(attach_to_head(body, [ponytail(parts)],
+                                         bpy.data.materials["human_hair"]))
 
     bpy.ops.object.select_all(action="DESELECT")
     body.select_set(True)
     rig.select_set(True)
     bpy.context.view_layer.objects.active = rig
     bpy.ops.object.parent_set(type="ARMATURE_AUTO")
+    head = body.vertex_groups["head"]
+    for g in body.vertex_groups:
+        g.remove(head_only)
+    head.add(head_only, 1.0, "REPLACE")
     used = {g.group for v in body.data.vertices for g in v.groups if g.weight > 0.0}
     empty = [g.name for g in body.vertex_groups if g.index not in used]
-    for eye in [o for o in body.users_collection[0].all_objects if ".eye." in o.name]:
-        world = eye.matrix_world.copy()
-        eye.parent, eye.parent_type, eye.parent_bone = rig, "BONE", "head"
-        eye.matrix_world = world
     print(f"rig: {len(spec)} bones; bones that got no weights: {empty or 'none'}")
     args.out.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(args.out.resolve()))

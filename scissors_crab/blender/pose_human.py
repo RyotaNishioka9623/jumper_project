@@ -134,6 +134,60 @@ def crouch(rig: bpy.types.Object, play: str = "L", hand_at=(0.0, 0.5, 0.26)) -> 
     hand(rig, other, "relaxed")
 
 
+def _blend(a, b, t: float) -> Vector:
+    return Vector(a).normalized().lerp(Vector(b).normalized(), t)
+
+
+def _reset(rig: bpy.types.Object) -> None:
+    for pb in rig.pose.bones:
+        pb.rotation_mode = "QUATERNION"
+        pb.rotation_quaternion = (1, 0, 0, 0)
+        pb.location = (0, 0, 0)
+    _update()
+
+
+def hands_on_knee(rig: bpy.types.Object, side: str) -> None:
+    """The wrist on top of its knee, the fingers over the kneecap."""
+    sx = 1.0 if side == "L" else -1.0
+    knee = rig.pose.bones[f"shin.{side}"].head
+    reach(rig, side, knee + Vector((0.0, 0.02, 0.06)), pole=(sx * 1.0, 0.4, 0.2))
+    aim(rig, f"hand.{side}", (-0.15 * sx, -0.45, -0.88))
+    hand(rig, side, "relaxed")
+
+
+def half_crouch(rig: bpy.types.Object, bend: float = 0.0, play: str | None = None,
+                hand_at=None, shape: str = "rock") -> None:
+    """Bent at the knees and hips, hands on the knees, peering down at the crab.
+
+    `bend` 0..1 goes from that half crouch down to a deeper one for throwing the hand at
+    a crab's height. With `play` and `hand_at` -- (toward its own side, forward, up from
+    the floor), metres -- that hand leaves its knee for the game, in `shape`."""
+    _reset(rig)
+    feet = {s: (rig.data.bones[f"foot.{s}"].tail_local - rig.data.bones[f"foot.{s}"].head_local)
+            for s in "LR"}
+    toes = {s: (rig.data.bones[f"toe.{s}"].tail_local - rig.data.bones[f"toe.{s}"].head_local)
+            for s in "LR"}
+    for s, x in (("L", 1.0), ("R", -1.0)):
+        aim(rig, f"thigh.{s}", _blend((0.12 * x, -0.6, -0.8), (0.22 * x, -0.88, -0.42), bend))
+        aim(rig, f"shin.{s}", _blend((0.02 * x, 0.32, -0.95), (0.02 * x, 0.52, -0.85), bend))
+        aim(rig, f"foot.{s}", feet[s])
+        aim(rig, f"toe.{s}", toes[s])
+    aim(rig, "spine", _blend((0.0, -0.66, 0.75), (0.0, -0.78, 0.62), bend))
+    aim(rig, "chest", _blend((0.0, -0.78, 0.62), (0.0, -0.88, 0.47), bend))
+    aim(rig, "neck", (0.0, -0.72, 0.69))
+    aim(rig, "head", (0.0, -0.66, 0.75))
+    for side in "LR":
+        if side == play:
+            sx = 1.0 if side == "L" else -1.0
+            floor = floor_level(rig)
+            out, forward, up = hand_at
+            reach(rig, side, (sx * out, -forward, floor + up))
+            aim(rig, f"hand.{side}", (0.1 * sx, -0.9, -0.42))
+            hand(rig, side, shape)
+        else:
+            hands_on_knee(rig, side)
+
+
 def floor_level(rig: bpy.types.Object) -> float:
     """Armature-space height of the floor under the posed feet (the toes' lowest end)."""
     _update()
