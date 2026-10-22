@@ -6,8 +6,10 @@ policies answer in simulation.
     .venv/bin/python scissors_crab/interactive/janken_cam.py --record demo.mp4
 
 Space starts a round. The crab warms up, calls "jan, ken" with its fist, and on "pon"
-throws -- scissors, the only thing it can throw. Your hand at that moment, read by
-MediaPipe's gesture recognizer from the Mac's camera, decides what happens next:
+throws -- scissors, the only thing it can throw -- and holds it while it looks at
+yours. Your hand just after the beat (by default the majority over 0.2-0.5 s after
+"pon": on the beat itself most hands are still on the way), read by MediaPipe's
+gesture recognizer from the Mac's camera, decides what happens next:
 
 - rock: the crab loses and cries (`jumper.janken_lose`),
 - paper: it wins, jumps and hides its face (`jumper.janken_win_jump`),
@@ -71,12 +73,17 @@ def step_of(render_frame: int) -> int:
 
 START = step_of(61)        # mid warm-up: two snips, then the fist
 JAN, KEN, PON = step_of(96), step_of(108), step_of(120)
-#: Steps after a throw beat at which the hand is read and the outcome taken: the
-#: reactions start 4 render frames after "pon" (step 212), so this is before them.
-DECIDE = 10
-#: The hand is the majority sign over [throw - LOOK_BACK, throw + DECIDE] -- people
-#: throw a little early or late.
-LOOK_BACK = 8
+#: When the hand is read, in seconds after the throw beat ("pon", "sho"): the
+#: majority sign over [READ_FROM_S, DECIDE_AT_S], the outcome taken at the end. On
+#: the beat itself most people's hands are still on the way, so the window starts
+#: after it (both are options).
+READ_FROM_S = 0.2
+DECIDE_AT_S = 0.5
+#: While the hand is being read the crab holds its throw: the clip is held on a step
+#: of the still scissors after the beat. Every clip is still from "pon" (198) to step
+#: 204, and the three agree through 211; the draw's "sho" is still for 19 steps.
+PON_HOLD = PON + 4
+SHO_HOLD = 16
 #: The draw's "aiko de sho" cycles: cycle i starts on render frame 138 + 36 i,
 #: throws ("sho") on 162 + 36 i and ends on 174 + 36 i; there are three. The last
 #: one is looped, its seam measured under a degree (AGENTS.md).
@@ -298,71 +305,99 @@ class Hand:
 
 # ── The game ──────────────────────────────────────────────────────────────────
 
+@dataclass
+class Throw:
+    """A beat on which the player throws: `beat` and `hold` are steps of the active
+    clip; `clock` is the game clock (ticks) when the beat came, None until it has."""
+
+    beat: int
+    hold: int
+    clock: int | None = None
+
+
 class Game:
     """Idle -> opening -> (throw) -> reaction, or draw -> (throw on each sho) -> ..."""
 
-    def __init__(self, crab: Crab) -> None:
+    def __init__(self, crab: Crab, read_from_s: float = READ_FROM_S,
+                 decide_at_s: float = DECIDE_AT_S) -> None:
+        if not 0.0 <= read_from_s < decide_at_s:
+            raise ValueError("the hand must be read from before the decision")
         self.crab = crab
+        self.read_from = round(read_from_s * CONTROL_HZ)
+        self.decide_at = round(decide_at_s * CONTROL_HZ)
         self.state = "idle"
-        self.throw_at: int | None = None
-        self.signs: list[tuple[int, str | None]] = []
+        self.throw: Throw | None = None
+        self.clock = 0
+        self.signs: list[tuple[int, str | None]] = []  # (clock, sign)
         self.forced: str | None = None
         self.result: tuple[str, str | None, float] | None = None  # outcome, sign, time
 
     def start(self) -> None:
         self.crab.start(START)
-        self.state, self.throw_at, self.signs, self.result = "opening", PON, [], None
+        self.state, self.signs, self.result = "opening", [], None
+        self.throw = Throw(PON, PON_HOLD)
 
     def tick(self, sign: str | None) -> None:
         """One control step with the hand as it is now."""
         if self.state == "idle":
             return
-        self.signs.append((self.crab.active.step, self.forced or sign))
-        if self.throw_at is not None and self.crab.active.step >= self.throw_at + DECIDE:
-            self.decide()
-        take = self.crab.active
-        if self.state == "draw" and take.step >= LOOP_END:
+        self.clock += 1
+        self.signs.append((self.clock, self.forced or sign))
+        t = self.throw
+        if t is not None:
+            if t.clock is None and self.crab.active.step >= t.beat:
+                t.clock = self.clock
+            if t.clock is not None and self.clock >= t.clock + self.decide_at:
+                self.decide()
+        take, t = self.crab.active, self.throw
+        if t is not None and t.clock is not None and take.step >= t.hold:
+            # Hold the throw until the hand has been read.
+            take.command.time_steps[:] = t.hold
+        elif self.state == "draw" and take.step >= LOOP_END:
             # Round and round: back to the last cycle's start, the same pose (scissors).
             take.command.time_steps[:] = AIKO[2]
-            self.throw_at, self.signs = SHO[2], []
+            self.throw = Throw(SHO[2], SHO[2] + SHO_HOLD)
         if not self.crab.advance():
             self.state = "idle"
 
     def decide(self) -> None:
-        thrown = [s for k, s in self.signs if k >= self.throw_at - LOOK_BACK and s]
+        start = self.throw.clock + self.read_from
+        thrown = [s for c, s in self.signs if c >= start and s]
         sign = collections.Counter(thrown).most_common(1)[0][0] if thrown else None
         outcome = OUTCOME[sign]
         self.result = (outcome, sign, time.perf_counter())
         self.forced, self.signs = None, []
         if outcome == "draw":
             if self.state != "draw":
-                # The draw's clip at the same step: just after its own "pon".
-                self.crab.hand_over("draw", self.crab.active.step)
+                # The draw's clip, on the same still scissors after its own "pon".
+                self.crab.hand_over("draw", PON_HOLD)
                 self.state = "draw"
             k = self.crab.active.step
             # The next "sho"; past the last one, the loop in tick() sets it again.
-            self.throw_at = next((s for s in SHO if s > k), None)
+            nxt = next((s for s in SHO if s > k), None)
+            self.throw = Throw(nxt, nxt + SHO_HOLD) if nxt is not None else None
         else:
-            # The reactions' own clips, just after their "pon".
-            self.crab.hand_over(outcome, PON + DECIDE)
-            self.state, self.throw_at = "reaction", None
+            # The reaction's own clip from the still scissors after "pon": the crab
+            # held its throw while the hand was read, and reacts now.
+            self.crab.hand_over(outcome, PON_HOLD)
+            self.state, self.throw = "reaction", None
 
     def call(self) -> tuple[str, str] | None:
         """The caption for the beat the crab is on."""
         if self.state == "idle":
             return ("スペースキーでじゃんけん", "Press space to play")
-        k = self.crab.active.step
+        k, t = self.crab.active.step, self.throw
         if self.state == "opening":
             if JAN - 8 <= k < KEN - 8:
                 return ("じゃん", "Rock,")
             if KEN - 8 <= k < PON - 8:
                 return ("けん", "paper,")
-            if PON - 8 <= k < PON + 20:
+            if k >= PON - 8:  # until the hand has been read
                 return ("ぽん！", "scissors, shoot!")
-        if self.state == "draw" and self.throw_at is not None:
-            if self.throw_at - 40 <= k < self.throw_at - 8:
+        if self.state == "draw" and t is not None:
+            if t.beat - 40 <= k < t.beat - 8:
                 return ("あいこで", "Again...")
-            if self.throw_at - 8 <= k < self.throw_at + 20:
+            if k >= t.beat - 8:
                 return ("しょ！", "shoot!")
         return None
 
@@ -496,11 +531,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--headless", action="store_true", help="no window (with --script)")
     ap.add_argument("--script", help='timed inputs, e.g. "start@0.5,rock@3.9" (seconds)')
     ap.add_argument("--seconds", type=float, help="stop after this long")
+    ap.add_argument("--read-from", type=float, default=READ_FROM_S, metavar="S",
+                    help="read the hand from this long after pon / sho (default "
+                         f"{READ_FROM_S})")
+    ap.add_argument("--decide-at", type=float, default=DECIDE_AT_S, metavar="S",
+                    help=f"and decide this long after it (default {DECIDE_AT_S})")
     args = ap.parse_args(argv)
 
     print("[janken] building the three crabs (takes a little while)...")
     crab = Crab((640, 480))
-    game = Game(crab)
+    game = Game(crab, args.read_from, args.decide_at)
     eyes = load_eyes()
     caps = Captions()
     hand = None if args.no_camera else Hand()
