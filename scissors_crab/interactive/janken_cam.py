@@ -21,8 +21,8 @@ process. On "pon" (and on each "sho") the active environment hands its physical 
 -- qpos, qvel and the last actions -- to the one for the outcome, set to the same
 point of its own clip: the clips share their opening frame for frame, so the crab
 carries on from where it is rather than jumping to a recording. The face is the
-take's eye animation (`tools/make_eyes.py`), shown beside the render the way the
-robot shows it, on two round screens.
+take's eye animation (`tools/make_eyes.py`), shown where the robot shows it: on two
+round screens on its face panel, placed as `blender/build_rig.py` places them.
 
 Keys: space starts a round; r / p / s force rock / paper / scissors for one throw
 (no camera needed); q or Esc quits. `--no-camera` runs on the keys alone and
@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import collections
 import importlib
+import math
 import sys
 import time
 from dataclasses import asdict, dataclass
@@ -103,6 +104,70 @@ RESULT_TEXT = {"lose": ("カニの負け…", "The crab loses..."),
 
 # ── The crab: three trained policies, one environment each ───────────────────
 
+#: The face: two round 0.9-inch screens on the display module's front panel --
+#: `blender/build_rig.py`'s numbers (the panel's outward normal and the centre of its
+#: front face in the base frame, the eyes' radius and spacing).
+PANEL_NORMAL = np.array((0.8, 0.0, 0.6))
+PANEL_CENTRE = np.array((0.0764, 0.0, 0.0541))
+EYE_RADIUS = 0.0229 / 2
+EYE_SPACING = 0.052
+
+
+def render_model(eye_px: int):
+    """The robot for drawing: jumper.xml on a light floor, lit as
+    `tools/preview_clip.py` lights it, with each eye a textured disc on the face
+    panel (`eye_R` at -y, the robot's right, drawn for the viewer's left)."""
+    import mujoco
+
+    spec = mujoco.MjSpec.from_file(str(REPO / "assets" / "jumper" / "jumper.xml"))
+    tex = spec.add_texture(name="grid", type=mujoco.mjtTexture.mjTEXTURE_2D,
+                           builtin=mujoco.mjtBuiltin.mjBUILTIN_CHECKER,
+                           rgb1=[0.82, 0.82, 0.80], rgb2=[0.74, 0.74, 0.72],
+                           width=512, height=512)
+    mat = spec.add_material(name="grid", texrepeat=[8, 8], reflectance=0.05)
+    mat.textures[mujoco.mjtTextureRole.mjTEXROLE_RGB] = tex.name
+    spec.worldbody.add_geom(type=mujoco.mjtGeom.mjGEOM_PLANE, size=[3, 3, 0.1],
+                            material="grid")
+    directional = mujoco.mjtLightType.mjLIGHT_DIRECTIONAL
+    spec.worldbody.add_light(type=directional, pos=[2, -2, 3], dir=[-0.5, 0.5, -1],
+                             diffuse=[0.7] * 3, castshadow=True)
+    spec.worldbody.add_light(type=directional, pos=[-2, 2, 2], dir=[0.5, -0.5, -1],
+                             diffuse=[0.3] * 3, castshadow=False)
+    spec.visual.headlight.ambient = [0.35] * 3
+    spec.visual.headlight.diffuse = [0.35] * 3
+    # A pale sky rather than MuJoCo's black past the floor's edge.
+    spec.add_texture(name="sky", type=mujoco.mjtTexture.mjTEXTURE_SKYBOX,
+                     builtin=mujoco.mjtBuiltin.mjBUILTIN_GRADIENT,
+                     rgb1=[0.93, 0.94, 0.96], rgb2=[0.80, 0.84, 0.89], width=256, height=1536)
+
+    n = PANEL_NORMAL / np.linalg.norm(PANEL_NORMAL)
+    up = np.array((0.0, 0.0, 1.0)) - n * n[2]
+    up /= np.linalg.norm(up)
+    across = np.array((0.0, 1.0, 0.0))  # the picture's x: to the viewer's right
+    seg = 48
+    base = spec.body("base_link")
+    for side, y in (("R", -EYE_SPACING / 2), ("L", EYE_SPACING / 2)):
+        centre = PANEL_CENTRE + np.array((0.0, y, 0.0)) + n * 0.0008
+        verts, uvs = [centre], [(0.5, 0.5)]
+        for i in range(seg):
+            a = 2 * math.pi * i / seg
+            verts.append(centre + EYE_RADIUS * (math.cos(a) * across + math.sin(a) * up))
+            uvs.append((0.5 + 0.5 * math.cos(a), 0.5 + 0.5 * math.sin(a)))
+        spec.add_mesh(name=f"eye_{side}", uservert=np.ravel(verts).tolist(),
+                      userface=[v for i in range(seg) for v in (0, 1 + i, 1 + (i + 1) % seg)],
+                      usertexcoord=np.ravel(uvs).tolist(),
+                      inertia=mujoco.mjtMeshInertia.mjMESH_INERTIA_SHELL)
+        screen = spec.add_texture(name=f"eye_{side}", type=mujoco.mjtTexture.mjTEXTURE_2D,
+                                  builtin=mujoco.mjtBuiltin.mjBUILTIN_FLAT, rgb1=[0, 0, 0],
+                                  width=eye_px, height=eye_px)
+        glow = spec.add_material(name=f"eye_{side}", emission=1.0, specular=0.0,
+                                 shininess=0.0)
+        glow.textures[mujoco.mjtTextureRole.mjTEXROLE_RGB] = screen.name
+        base.add_geom(type=mujoco.mjtGeom.mjGEOM_MESH, meshname=f"eye_{side}",
+                      material=f"eye_{side}", contype=0, conaffinity=0, group=1, mass=0)
+    return spec.compile()
+
+
 @dataclass
 class Take:
     name: str
@@ -127,7 +192,7 @@ class Take:
 class Crab:
     """The live simulation: whichever take is active steps at 50 Hz."""
 
-    def __init__(self, render_size: tuple[int, int]) -> None:
+    def __init__(self, render_size: tuple[int, int], eye_px: int) -> None:
         import mujoco
         import torch
 
@@ -164,20 +229,32 @@ class Crab:
             print(f"[crab] {name}: {task_id} <- {ckpt}")
         self.active = self.takes["lose"]
 
-        sim = self.active.env.sim
         self.mujoco = mujoco
-        self.model = sim.render_model
+        self.model = render_model(eye_px)
         self.data = mujoco.MjData(self.model)
-        self.model.vis.headlight.ambient[:] = 0.45
-        self.model.vis.headlight.diffuse[:] = 0.55
         w, h = render_size
         self.model.vis.global_.offwidth = max(self.model.vis.global_.offwidth, w)
         self.model.vis.global_.offheight = max(self.model.vis.global_.offheight, h)
         self.renderer = mujoco.Renderer(self.model, height=h, width=w)
+        # The simulation's scene names the robot's joints "robot/<name>": copy qpos
+        # across by name rather than trusting the two layouts to agree.
+        sim_model = self.active.env.sim.mj_model
+        width = {mujoco.mjtJoint.mjJNT_FREE: 7, mujoco.mjtJoint.mjJNT_BALL: 4}
+        src, dst = [], []
+        for j in range(self.model.njnt):
+            name = self.model.joint(j).name
+            k = mujoco.mj_name2id(sim_model, mujoco.mjtObj.mjOBJ_JOINT, f"robot/{name}")
+            if k < 0:
+                raise RuntimeError(f"the simulation has no joint robot/{name}")
+            nq = width.get(self.model.jnt_type[j], 1)
+            dst += range(self.model.jnt_qposadr[j], self.model.jnt_qposadr[j] + nq)
+            src += range(sim_model.jnt_qposadr[k], sim_model.jnt_qposadr[k] + nq)
+        self.qpos_from, self.qpos_to = np.array(src), np.array(dst)
+        self.screens = [self.model.texture(f"eye_{side}").id for side in ("R", "L")]
         self.camera = mujoco.MjvCamera()
         self.camera.type = mujoco.mjtCamera.mjCAMERA_FREE
         # The player's view: in front of the crab (it faces +X), a little to its left.
-        self.camera.azimuth, self.camera.elevation, self.camera.distance = 200.0, -18.0, 0.62
+        self.camera.azimuth, self.camera.elevation, self.camera.distance = 200.0, -16.0, 0.56
 
     def start(self, step: int) -> None:
         """A round: the lose take (any would do, they share the opening) placed on its
@@ -222,12 +299,18 @@ class Crab:
         t.obs, _, dones, _ = t.wrapped.step(t.policy(t.obs))
         return not bool(dones[0])
 
-    def render(self) -> np.ndarray:
+    def render(self, eyes: tuple[np.ndarray, np.ndarray]) -> np.ndarray:
+        """The crab as it is now, with `eyes` (right, left: RGB, rows bottom-up, as
+        `load_eyes` gives them) on its screens."""
         _, live = self.active.env.sim.env_mjdata(0)
-        self.data.qpos[:] = live.qpos
+        self.data.qpos[self.qpos_to] = live.qpos[self.qpos_from]
         self.mujoco.mj_forward(self.model, self.data)
+        for tex, img in zip(self.screens, eyes):
+            adr = self.model.tex_adr[tex]
+            self.model.tex_data[adr:adr + img.size] = img.ravel()
+            self.mujoco.mjr_uploadTexture(self.model, self.renderer._mjr_context, tex)
         base = self.data.qpos[:3]
-        self.camera.lookat[:] = (base[0] + 0.02, base[1], 0.075)
+        self.camera.lookat[:] = (base[0] + 0.02, base[1], 0.095)
         self.renderer.update_scene(self.data, camera=self.camera)
         return self.renderer.render()
 
@@ -450,27 +533,15 @@ def load_eyes() -> dict[str, list[tuple[np.ndarray, np.ndarray]]]:
         rs, ls = sorted((d / "R").glob("*.png")), sorted((d / "L").glob("*.png"))
         if not rs or len(rs) != len(ls):
             raise SystemExit(f"error: no eye frames in {d} (tools/make_eyes.py writes them)")
-        eyes[name] = [(cv2.imread(str(r)), cv2.imread(str(l))) for r, l in zip(rs, ls)]
+        # RGB with the rows bottom-up: a MuJoCo texture's first row is its bottom.
+        eyes[name] = [tuple(np.ascontiguousarray(cv2.cvtColor(cv2.imread(str(f)),
+                                                              cv2.COLOR_BGR2RGB)[::-1])
+                            for f in pair) for pair in zip(rs, ls)]
     return eyes
 
 
-def round_screen(img: np.ndarray, size: int) -> np.ndarray:
-    """An eye image on a round screen with a dark bezel, BGR [size, size]."""
-    out = np.full((size, size, 3), 30, np.uint8)
-    inner = int(size * 0.86)
-    face = cv2.resize(img, (inner, inner), interpolation=cv2.INTER_AREA)
-    o = (size - inner) // 2
-    mask = np.zeros((inner, inner), np.uint8)
-    cv2.circle(mask, (inner // 2, inner // 2), inner // 2, 255, -1)
-    region = out[o:o + inner, o:o + inner]
-    region[mask > 0] = face[mask > 0]
-    cv2.circle(out, (size // 2, size // 2), size // 2 - 1, (70, 70, 70), 2)
-    return out
-
-
 def compose(cam: np.ndarray | None, points: np.ndarray | None, sign: str | None,
-            crab_rgb: np.ndarray, eyes: tuple[np.ndarray, np.ndarray], game: Game,
-            caps: Captions) -> np.ndarray:
+            crab_rgb: np.ndarray, game: Game, caps: Captions) -> np.ndarray:
     W, H = 1280, 720
     frame = np.full((H, W, 3), (236, 240, 244), np.uint8)
     # Left: the player, mirrored like a mirror.
@@ -486,13 +557,9 @@ def compose(cam: np.ndarray | None, points: np.ndarray | None, sign: str | None,
     else:
         frame[120:600, 0:640] = 200
         caps.put(frame, "カメラなし", "keys r / p / s", 40, 320, 360)
-    # Right: the crab, and its two screens under it.
+    # Right: the crab, its face on its own screens; and its throw, under it.
     frame[120:600, 640:1280] = cv2.cvtColor(crab_rgb, cv2.COLOR_RGB2BGR)
-    # The robot's right screen is on the viewer's left, as you face it.
-    r, l = eyes
-    frame[606:714, 850:958] = round_screen(r, 108)
-    frame[606:714, 962:1070] = round_screen(l, 108)
-    caps.put(frame, "カニの顔", "its two screens", 26, 1170, 660)
+    caps.put(frame, "カニ：チョキ", "Crab: Scissors", 40, 960, 660)
     # Your sign, under you.
     ja, en = SIGN_TEXT[game.forced or sign]
     caps.put(frame, f"あなた：{ja}", en, 40, 320, 660)
@@ -539,9 +606,9 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     print("[janken] building the three crabs (takes a little while)...")
-    crab = Crab((640, 480))
-    game = Game(crab, args.read_from, args.decide_at)
     eyes = load_eyes()
+    crab = Crab((640, 480), eyes["lose"][0][0].shape[0])
+    game = Game(crab, args.read_from, args.decide_at)
     caps = Captions()
     hand = None if args.no_camera else Hand()
     cap = None
@@ -557,7 +624,7 @@ def main(argv: list[str] | None = None) -> int:
         writer = cv2.VideoWriter(str(args.record), cv2.VideoWriter_fourcc(*"mp4v"), 30,
                                  (1280, 720))
     script = parse_script(args.script)
-    crab_rgb = crab.render()
+    crab_rgb = crab.render(eyes["lose"][0])
 
     print("[janken] ready: space = play, r / p / s = force a throw, q = quit")
     t0 = time.perf_counter()
@@ -599,12 +666,12 @@ def main(argv: list[str] | None = None) -> int:
                     game.tick(sign)
                     sim_t += 1 / CONTROL_HZ
                     n += 1
-                if n:
-                    crab_rgb = crab.render()
                 take = crab.active
                 seq = eyes[take.name]
                 i = min(int(take.step / CONTROL_HZ * EYE_FPS), len(seq) - 1)
-                frame = compose(cam_bgr, points, sign, crab_rgb, seq[i], game, caps)
+                if n or game.state != "idle":
+                    crab_rgb = crab.render(seq[i])
+                frame = compose(cam_bgr, points, sign, crab_rgb, game, caps)
                 while writer is not None and next_rec <= time.perf_counter():
                     writer.write(frame)
                     next_rec += 1 / 30
