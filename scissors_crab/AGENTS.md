@@ -112,6 +112,7 @@ Blender で振り付け（jumper_rig.blend にキーフレーム）
 - **編集リスト**：`edit/make_scissors_crab.py` が描画フレーム番号からテロップ16個と効果音24個の時刻を計算し、`edit/scissors_crab.json` を書く。約23秒。`tools/edit.py` に効果音の `dur`（途中で切る）と全体の `gain_db`（＋リミッター）を追加した。テロップの大きさは1080p用（本文92、題110、クレジット48）
 - 注意：学習ログの `feet_clearance` は、ジャンプを含まない試行とも平均されるので小さく出る（win_jump で0.007）。成否は再生して足の形状の最下点で測る
 - **カメラ版**（2026-10-15）：`interactive/janken_cam.py`。MediaPipe 1.1.1 を .venv に入れ、Google 公式の `gesture_recognizer.task` を `external/models/` に置いた（ユーザー了承済み）。手の判定は4本の指の伸び（第2関節前後の角度と手首からの距離）で行い、判定できないときだけ MediaPipe のジェスチャー（Closed_Fist / Open_Palm / Victory）を使う。合成した手で20通り（4種×5方向）確認済み。カメラなしの台本で、あいこ→あいこ→勝ち、負けの流れを確認済み。**実際のカメラでの確認はユーザーが行う**（macOS のカメラ許可が必要）
+- **カメラ版の投稿用動画**（2026-10-28）：ユーザーが手だけを映して撮影（あいこ→カニの勝ち、あいこ→カニの負け、29.1秒）。待ち時間を切り、2.2秒のタイトル画面を付けて `renders/live/live_demo.mp4`（24.1秒）にした（`edit/make_live_demo.py`）。投稿文は `post/x_posts.md` の6.と7.（本投稿を引用する別の投稿。画面に「カニ：チョキ」が出るので本投稿の後に出す）
 - 次の作業：
   1. 第3版 `renders/final/scissors_crab.mp4`（22.4秒、1920×1080）をユーザーが確認中。締めのカットは `win_ending.mp4`（〜301）＋`win_ending_rest.mp4`（302〜540）。字幕や効果音を直すときは `edit/make_scissors_crab.py` を編集して再生成（描画は不要、約15秒）
   2. 投稿文の確認（下書きは `post/x_posts.md`、本投稿244字・返信3本・日本語の引用190字。メンションは @KingKongRobo）

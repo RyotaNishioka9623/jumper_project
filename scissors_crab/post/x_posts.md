@@ -69,3 +69,27 @@ Sound effects: 効果音ラボ
 
 - 学習の評価は「姿勢がお手本に近いか」だけで、空中に出ても点が増えなかった。ダンス用の電力とトルクの減点は、思い切り踏み切るほど損をする設定だった（公式ジャンプのお手本で計算すると、踏み切りの0.2秒間に1ステップ平均4.7点の減点、加点は最大6.5点）。
 - ジャンプの区間だけ減点を外し、公式の `jumper.jump` と同じ3項目（胴体の高さ、上下速度、足の接地状態）で加点したところ、胴体が130mm→157mmまで上がり、2回とも約6mm・0.06秒だけ空中に出た（お手本は33.6mm）。
+
+---
+
+# カメラ版（本投稿とは別の投稿）
+
+動画は `renders/live/live_demo.mp4`（24.1秒、1280×720、H.264。`edit/make_live_demo.py` → `tools/edit.py` で作る）。本投稿（上の1.）を**引用**して投稿し、ハッシュタグとメンションを付ける（審査の「Useful（技能）」に当たる、もう1本の応募）。この動画は画面に「カニ：チョキ」と出るので、本投稿より後に出す。
+
+## 6. カメラ版（英語、動画を付け、本投稿を引用）
+
+```text
+Now you can actually play it 🦀✂️
+
+A webcam reads your hand with MediaPipe, and the trained Jumper policies react live in simulation: the crab loses, wins, or calls a draw and goes again.
+
+@KingKongRobo #Jumper #CrabRobot #OpenSourceRobot
+```
+
+## 7. カメラ版の日本語（6.の引用ポスト）
+
+```text
+カメラでカニとじゃんけんできるようにしました🦀
+
+MediaPipeで手を読み取り、学習済みのカニがシミュレーションの中でその場で反応します。あいこなら「あいこでしょ」が続きます。
+```

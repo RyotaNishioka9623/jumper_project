@@ -1,0 +1,47 @@
+{
+ "size": [
+  1280,
+  720
+ ],
+ "fps": 30,
+ "font": "scissors_crab/external/fonts/mplus-rounded-1c/MPLUSRounded1c-ExtraBold.ttf",
+ "clips": [
+  {
+   "file": "scissors_crab/renders/live/card.mp4",
+   "in": 0.0,
+   "out": 2.2
+  },
+  {
+   "file": "scissors_crab/renders/live/demo_x.mp4",
+   "in": 5.0,
+   "out": 15.3
+  },
+  {
+   "file": "scissors_crab/renders/live/demo_x.mp4",
+   "in": 16.67,
+   "out": 28.3
+  }
+ ],
+ "captions": [
+  {
+   "text": "カメラでカニとじゃんけん",
+   "sub": "Rock-paper-scissors with the crab, live",
+   "start": 0.0,
+   "end": 2.2,
+   "pos": "center",
+   "size": 84,
+   "fade_in": false
+  },
+  {
+   "text": "MediaPipe が手を読み取り 学習済みのカニがその場で反応",
+   "sub": "MediaPipe reads your hand; the trained policies answer in simulation",
+   "start": 0.0,
+   "end": 2.2,
+   "pos": "bottom",
+   "size": 34,
+   "fade_in": false
+  }
+ ],
+ "sounds": [],
+ "fade_out": 0.8
+}

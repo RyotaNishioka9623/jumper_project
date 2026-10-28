@@ -162,6 +162,13 @@ curl -L -o scissors_crab/external/models/gesture_recognizer.task \
 # 画面ごと録画する（デモ動画用）
 .venv/bin/python scissors_crab/interactive/janken_cam.py --record scissors_crab/renders/live/demo.mp4
 
+# 録画を X 用（H.264）にし、待ち時間を切ってタイトルを付けた投稿用動画にする
+ffmpeg -i scissors_crab/renders/live/demo.mp4 -c:v libx264 -pix_fmt yuv420p -crf 20 \
+    -movflags +faststart scissors_crab/renders/live/demo_x.mp4
+.venv/bin/python scissors_crab/edit/make_live_demo.py
+.venv/bin/python scissors_crab/tools/edit.py scissors_crab/edit/live_demo.json \
+    --out scissors_crab/renders/live/live_demo.mp4
+
 # カメラなしで確認する（台本どおりに手を出す）
 .venv/bin/python scissors_crab/interactive/janken_cam.py --no-camera --headless \
     --script "start@0.5,rock@1.5" --seconds 10 --record check.mp4
