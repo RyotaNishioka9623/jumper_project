@@ -31,15 +31,6 @@
    "pos": "center",
    "size": 84,
    "fade_in": false
-  },
-  {
-   "text": "MediaPipe が手を読み取り 学習済みのカニがその場で反応",
-   "sub": "MediaPipe reads your hand; the trained policies answer in simulation",
-   "start": 0.0,
-   "end": 2.2,
-   "pos": "bottom",
-   "size": 34,
-   "fade_in": false
   }
  ],
  "sounds": [],
