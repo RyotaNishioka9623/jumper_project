@@ -4,6 +4,8 @@
 
 **English** | [简体中文](README.zh.md)
 
+> ✂️ **This fork is [Scissors Crab](scissors_crab/README.md)**: a crab that can only throw scissors, taught to play rock-paper-scissors with this toolkit -- an entry for the Crab Robot Open-source Challenge.
+
 **Jumper is a 22-DoF crab robot.** [View hardware →](docs/HARDWARE.md)
 
 This repo is Jumper’s AI toolkit for appearance, motion, and scene creation. Open this repo in an AI coding assistant and try the prompts below.

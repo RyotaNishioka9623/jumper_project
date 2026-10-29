@@ -1,10 +1,12 @@
-<!-- tracks: README.md @ sha256:6c35e964fc575f2d -->
+<!-- tracks: README.md @ sha256:79e0965ac2541d9b -->
 
 ![跳跳](docs/media/jumper-hero-zh.png)
 
 # 跳跳
 
 [English](README.md) | **简体中文**
+
+> ✂️ **本分支是 [Scissors Crab（只会出剪刀的螃蟹）](scissors_crab/README.md)**：用本工具集教一只只会出剪刀的螃蟹玩石头剪刀布——螃蟹机器人开源动作大赛的参赛作品。
 
 **跳跳是一台 22 自由度螃蟹机器人。** [查看硬件 →](docs/HARDWARE.zh.md)
 
