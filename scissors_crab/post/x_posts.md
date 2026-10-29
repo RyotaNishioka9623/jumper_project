@@ -104,20 +104,16 @@ Code: https://github.com/RyotaNishioka9623/jumper_project/blob/main/scissors_cra
 Runs on a Mac CPU. MediaPipe reads your hand 0.2–0.5 s after "shoot", and the crab's state is handed mid-motion to the policy for that outcome. Simulation only, not the real robot yet.
 ```
 
-## 9. カニの目線（8.への返信、目線の動画を付ける）
+## 9. 実機のカメラでやりたいこと（8.への返信、文だけ）
 
-動画は `renders/pov/pov_lose.mp4`（負けの場面を、`jumper.xml` の前面カメラ `onboard` の位置・向き・画角で描いたもの。5.2秒）。実機で確かめたことではなく、これからやりたいこととして書く。
+シミュレーションで描いたカニの目線の映像（`renders/pov/`）は**付けない**（2026-10-29、ユーザーの判断）。実機のカメラは対角162°の超広角で、普通のレンズとして描いた映像は実機の見え方と違うため。実機で確かめたことではなく、これからやりたいこととして書く。
 
 ```text
-What the crab's own camera sees 👀 (simulation: rendered from Jumper's front camera mount and field of view)
-
-Next I'd love to try reading your hand with the real Jumper's front camera instead of my webcam, so the crab judges the game with its own eyes.
+Next I'd love to try this with the real Jumper's own front camera instead of my webcam, so the crab reads your hand and judges the game with its own eyes 👀
 ```
 
-## 10. カニの目線の日本語（7.への返信、同じ動画を付ける）
+## 10. 9.の日本語（7.への返信、文だけ）
 
 ```text
-カニ自身のカメラから見ると、こうなります👀（シミュレーション。Jumperの前面カメラの位置と画角で描画）
-
-次は、Macのカメラではなく、実機のJumperの前面カメラで手を読んでみたいです。カニが自分の目で勝負を判定できるように。
+次は、Macのカメラではなく、Jumper実機の前面カメラで手を読んでみたいです。カニが自分の目で勝負を判定できるように👀
 ```
