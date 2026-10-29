@@ -93,3 +93,13 @@ A webcam reads your hand with MediaPipe, and the trained Jumper policies react l
 
 MediaPipeで手を読み取り、学習済みのカニがシミュレーションの中でその場で反応します。あいこなら「あいこでしょ」が続きます。
 ```
+
+## 8. カメラ版への返信：コード（6.への返信）
+
+本投稿のスレッドのリンクまでたどらない人のために、カメラ版のスクリプトへ直接つなぐ。
+
+```text
+Code: https://github.com/RyotaNishioka9623/jumper_project/blob/main/scissors_crab/interactive/janken_cam.py
+
+Runs on a Mac CPU. MediaPipe reads your hand 0.2–0.5 s after "shoot", and the crab's state is handed mid-motion to the policy for that outcome. Simulation only, not the real robot yet.
+```
